@@ -1,0 +1,19 @@
+[package]
+name = "amd-bus"
+description = "NATS JetStream transport for normalised African market data events."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+amd-core = { workspace = true }
+async-nats = { workspace = true }
+futures = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+time = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }

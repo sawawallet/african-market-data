@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  # The committed .sqlx cache means no database is needed to compile.
+  SQLX_OFFLINE: "true"
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      # Live tests are excluded by default: CI must never depend on, or hammer,
+      # a free third-party service.
+      - name: Test
+        run: cargo test --workspace
+
+      - name: Build release
+        run: cargo build --workspace --release
+
+  schema:
+    name: schema
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: amd
+          POSTGRES_USER: amd
+          POSTGRES_PASSWORD: amd_dev
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U amd -d amd"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --version '^0.8' --no-default-features --features postgres,rustls --locked
+
+      - name: Apply migrations
+        env:
+          DATABASE_URL: postgres://amd:amd_dev@localhost:5432/amd
+        run: sqlx migrate run --source deploy/postgres/migrations
+
+      # Catches a .sqlx cache that drifted from the schema — the failure mode
+      # where CI passes offline and production breaks on a real query.
+      - name: Verify offline query cache is current
+        env:
+          DATABASE_URL: postgres://amd:amd_dev@localhost:5432/amd
+        run: cargo sqlx prepare --workspace --check -- --all-targets
+
+  clickhouse:
+    name: clickhouse schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply and verify ClickHouse schema
+        run: |
+          docker run -d --name ch \
+            -e CLICKHOUSE_DB=amd -e CLICKHOUSE_USER=amd -e CLICKHOUSE_PASSWORD=amd_dev \
+            -v "$PWD/deploy/clickhouse:/docker-entrypoint-initdb.d:ro" \
+            clickhouse/clickhouse-server:25.3-alpine
+          for i in $(seq 1 40); do
+            docker exec ch clickhouse-client --user amd --password amd_dev \
+              --query "SELECT 1" >/dev/null 2>&1 && break
+            sleep 3
+          done
+          docker logs ch 2>&1 | grep -i "DB::Exception" && { echo "schema failed"; exit 1; }
+          docker exec ch clickhouse-client --user amd --password amd_dev --database amd \
+            --query "SHOW TABLES" | tee /tmp/tables
+          for t in quotes bars ohlcv_daily ohlcv_daily_mv feed_health; do
+            grep -qx "$t" /tmp/tables || { echo "missing table: $t"; exit 1; }
+          done

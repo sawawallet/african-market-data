@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, label, max_delay_class, exchanges, rate_limit_rpm\n            FROM api_keys\n            WHERE key_hash = $1 AND revoked_at IS NULL\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "label",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "max_delay_class",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "exchanges",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 4,
+        "name": "rate_limit_rpm",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "1765178e5961339adadb82bd7104506e4baf5113463098faf7d40a2d3d1e1e83"
+}

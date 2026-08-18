@@ -1,0 +1,98 @@
+# Local development stack.
+#
+# Mirrors the production topology closely enough to be useful: NATS with
+# JetStream enabled, ClickHouse for the archive, Postgres for reference data,
+# and an OTel collector so tracing works the same way locally as it will on the
+# VPS. Redis fronts the latest-quote cache the API reads on every request.
+
+name: amd
+
+services:
+  nats:
+    image: nats:2.11-alpine
+    # JetStream must be explicit; without -js the bus silently degrades to
+    # core NATS and every publish ack fails.
+    command:
+      - "-js"
+      - "-sd=/data"
+      - "-m=8222"
+    ports:
+      - "4222:4222"   # client
+      - "8222:8222"   # monitoring
+    volumes:
+      - nats-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.3-alpine
+    environment:
+      CLICKHOUSE_DB: amd
+      CLICKHOUSE_USER: amd
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-amd_dev}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ports:
+      - "8123:8123"   # HTTP
+      - "9000:9000"   # native
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      # Applied in filename order on first start of an empty data directory.
+      - ./clickhouse:/docker-entrypoint-initdb.d:ro
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
+    healthcheck:
+      # clickhouse-client rather than an HTTP probe: the HTTP interface binds
+      # after the native port and the image ships no curl, so a wget probe
+      # reports unhealthy long after the server is serving.
+      test: ["CMD", "clickhouse-client", "--user", "amd", "--password", "${CLICKHOUSE_PASSWORD:-amd_dev}", "--query", "SELECT 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 30s
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: amd
+      POSTGRES_USER: amd
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-amd_dev}
+    ports:
+      # 5432 and 6379 are commonly taken by a native install on a dev
+      # machine, which wins the loopback race against a container bound to
+      # 0.0.0.0. Offset host ports so the stack never fights local tooling.
+      - "55432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U amd -d amd"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "56379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  otel:
+    image: otel/opentelemetry-collector-contrib:0.121.0
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes:
+      - ./otel/config.yaml:/etc/otel/config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+
+volumes:
+  nats-data:
+  clickhouse-data:
+  postgres-data:

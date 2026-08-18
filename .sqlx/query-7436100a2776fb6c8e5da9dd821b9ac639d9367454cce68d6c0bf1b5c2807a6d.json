@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO instruments\n                (id, exchange, symbol, currency, name, isin, sector, shares_outstanding)\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n            ON CONFLICT (id) DO UPDATE SET\n                name               = COALESCE(EXCLUDED.name, instruments.name),\n                isin               = COALESCE(EXCLUDED.isin, instruments.isin),\n                sector             = COALESCE(EXCLUDED.sector, instruments.sector),\n                shares_outstanding = COALESCE(EXCLUDED.shares_outstanding,\n                                              instruments.shares_outstanding),\n                last_seen          = now()\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Bpchar",
+        "Text",
+        "Text",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7436100a2776fb6c8e5da9dd821b9ac639d9367454cce68d6c0bf1b5c2807a6d"
+}

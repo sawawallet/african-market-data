@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, exchange, symbol, currency, name, isin, sector, shares_outstanding\n            FROM instruments WHERE exchange = $1 ORDER BY symbol\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "exchange",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "symbol",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "currency",
+        "type_info": "Bpchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "isin",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "sector",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "shares_outstanding",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "eeb37cdd685c7c00cffd4d9a781be993e7eb40ae36c50f4ebc08ae2efa08ee8a"
+}

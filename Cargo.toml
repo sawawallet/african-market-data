@@ -1,0 +1,58 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/amd-core",
+    "crates/amd-calendar",
+    "crates/amd-adapters",
+    "crates/amd-bus",
+    "crates/amd-store",
+    "crates/amd-api",
+    "crates/amd-ingestor",
+    "crates/amd-feed",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+license = "MIT"
+repository = "https://github.com/sawa/african-market-data"
+authors = ["Sawa"]
+
+[workspace.dependencies]
+amd-core = { path = "crates/amd-core" }
+amd-calendar = { path = "crates/amd-calendar" }
+amd-adapters = { path = "crates/amd-adapters" }
+amd-bus = { path = "crates/amd-bus" }
+amd-store = { path = "crates/amd-store" }
+
+tokio = { version = "1.43", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+time = { version = "0.3", features = ["serde", "formatting", "parsing", "macros"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "gzip"] }
+async-nats = "0.38"
+futures = "0.3"
+axum = "0.8"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["trace", "cors", "compression-gzip"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "macros", "migrate", "time", "uuid"] }
+clickhouse = { version = "0.13", features = ["time"] }
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }
+config = "0.15"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+
+# The feed handler runs colocated and must not be slowed by debug assertions
+# during load testing, but keep symbols for perf profiling.
+[profile.release.package.amd-feed]
+debug = 1

@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO symbol_aliases (source, source_symbol, instrument_id, provenance)\n            VALUES ($1, $2, $3, $4)\n            ON CONFLICT (source, source_symbol) DO UPDATE SET\n                instrument_id = EXCLUDED.instrument_id,\n                provenance    = EXCLUDED.provenance\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6ac84bdc8deee465e19cf555ab7da88788a624b971b6b08747a1cf5563778c97"
+}

@@ -1,0 +1,22 @@
+[package]
+name = "amd-calendar"
+description = "Trading sessions, exchange-local dates and staleness for African venues."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+amd-core = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+time = { workspace = true }
+# jiff carries the IANA tzdb and does real zoned arithmetic. Kept inside this
+# crate only: the rest of the workspace speaks time::OffsetDateTime, which is
+# what sqlx and the clickhouse client integrate with. Conversion is via unix
+# nanoseconds and is lossless.
+jiff = { version = "0.2", features = ["serde"] }
+
+[dev-dependencies]
+time = { workspace = true }

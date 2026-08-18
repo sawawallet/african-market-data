@@ -1,0 +1,15 @@
+node_modules/
+dist/
+*.log
+.env
+.env.*
+.DS_Store
+coverage/
+
+# Rust
+/target/
+**/*.rs.bk
+
+# Local infra state
+deploy/data/
+.env.local

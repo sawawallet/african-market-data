@@ -1,0 +1,25 @@
+{
+  "name": "african-market-data",
+  "version": "0.1.0",
+  "description": "Normalised market data for African stock exchanges. One schema, one client, provenance on every quote. NGX, JSE, GSE, NSE Kenya, EGX, BRVM and more.",
+  "keywords": [
+    "african-stock-market-api", "african-stocks", "african-market-data",
+    "ngx", "nigerian-stock-exchange", "jse", "johannesburg-stock-exchange",
+    "gse", "ghana-stock-exchange", "nse-kenya", "nairobi-securities-exchange",
+    "egx", "brvm", "stock-market-api", "market-data", "fintech", "africa"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "files": ["dist", "README.md", "LICENSE"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test --experimental-strip-types test/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "example": "npm run build && node examples/watchlist.ts"
+  },
+  "license": "MIT",
+  "devDependencies": { "typescript": "^5.7.0", "@types/node": "^22.10.0" }
+}

@@ -1,0 +1,16 @@
+[package]
+name = "amd-core"
+description = "Core domain types for African market data: fixed-point money, instruments, quotes, provenance."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+thiserror = { workspace = true }
+time = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
