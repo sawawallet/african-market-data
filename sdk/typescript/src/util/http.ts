@@ -10,7 +10,7 @@ export interface HttpOptions {
 }
 
 const DEFAULT_UA =
-  "african-market-data (+https://github.com/african-market-data)";
+  "african-market-data (+https://github.com/sawawallet/african-market-data)";
 
 export class HttpError extends Error {
   constructor(message: string, readonly status: number, readonly url: string) {

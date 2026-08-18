@@ -5,7 +5,7 @@ schema across NGX, JSE, GSE, NSE Kenya, EGX, BRVM and twelve more venues — wit
 fixed-point prices, honest provenance on every quote, and a path from free
 public sources to direct exchange feeds.
 
-[![CI](https://github.com/OWNER/african-market-data/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/african-market-data/actions/workflows/ci.yml)
+[![CI](https://github.com/sawawallet/african-market-data/actions/workflows/ci.yml/badge.svg)](https://github.com/sawawallet/african-market-data/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
@@ -67,7 +67,7 @@ licensed real-time data because someone wired a route wrong.
 ## Quick start
 
 ```bash
-git clone https://github.com/OWNER/african-market-data
+git clone https://github.com/sawawallet/african-market-data
 cd african-market-data
 cargo run -p amd-api
 ```

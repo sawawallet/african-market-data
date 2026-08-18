@@ -8,7 +8,7 @@ use serde::de::DeserializeOwned;
 const USER_AGENT: &str = concat!(
     "african-market-data/",
     env!("CARGO_PKG_VERSION"),
-    " (+https://github.com/sawa/african-market-data)"
+    " (+https://github.com/sawawallet/african-market-data)"
 );
 
 #[derive(Debug, Clone)]

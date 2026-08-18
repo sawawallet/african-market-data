@@ -16,7 +16,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.90"
 license = "MIT"
-repository = "https://github.com/sawa/african-market-data"
+repository = "https://github.com/sawawallet/african-market-data"
 authors = ["Sawa"]
 
 [workspace.dependencies]
