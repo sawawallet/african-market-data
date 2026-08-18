@@ -149,7 +149,7 @@ crates/
   amd-store       ClickHouse tick archive + Postgres reference/entitlements.
   amd-ingestor    Polls on each venue's calendar, publishes only what moved.
   amd-api         Axum. REST snapshots, SSE streaming, entitlement filtering.
-  amd-feed        MITCH codec + gap-recovery state machine (JSE, NSX, NSE).
+  amd-feed        MITCH codec, gap recovery, book builder (JSE, NSX, NSE).
 sdk/typescript    npm client (in progress)
 deploy/           compose stack, ClickHouse schema, Postgres migrations
 ```
@@ -207,10 +207,32 @@ from the sequence alone — both look like "a number below what we expect". The
 separating invariant is that *a single line never goes backwards except on
 restart*, so high-water marks are tracked per line rather than globally.
 
+**Book building.** MITCH is market-by-order, and most of its messages carry no
+instrument identifier at all — `Order Modified` and `Order Executed` name only
+an order reference. So `amd-feed` maintains an order pool alongside per-venue
+books, and levels keep their queue of order ids rather than just an aggregate
+size. Discarding queue position would still yield correct top-of-book quotes,
+but it is exactly the information a market-by-order feed carries and a quote API
+does not — throwing it away would forfeit the reason for taking the feed.
+
+Priority is handled where it is easy to get wrong: a resize at an unchanged
+price keeps its place, a price move always joins the back of the new level, and
+the exchange can revoke priority outright even at the same price. Partial fills
+reduce size without costing the remainder its position.
+
+Inconsistencies are counted rather than swallowed — unknown orders, desynced
+levels, oversized executions, duplicate ids. A handler that halts on the first
+one is useless; one that hides them is worse. A rising `unknown_order` count is
+the signature of a gap that recovery missed.
+
+The book projects into the same `Quote` the polled adapters emit, which is what
+makes a licensed direct feed substitutable for a free source without anything
+downstream noticing.
+
 ## Development
 
 ```bash
-cargo test --workspace                        # 66 tests, no network
+cargo test --workspace                        # 86 tests, no network
 cargo test -p amd-adapters -- --ignored       # hits the live kwayisi API
 cargo clippy --workspace --all-targets
 ```

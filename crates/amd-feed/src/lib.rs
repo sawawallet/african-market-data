@@ -40,4 +40,5 @@
 //! [`amd_core::Provenance`] carries `sequence` and `recovered` because a feed
 //! handler has both and a REST source has neither.
 
+pub mod book;
 pub mod mitch;

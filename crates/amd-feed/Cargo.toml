@@ -10,4 +10,5 @@ repository.workspace = true
 [dependencies]
 amd-core = { workspace = true }
 thiserror = { workspace = true }
+time = { workspace = true }
 tracing = { workspace = true }

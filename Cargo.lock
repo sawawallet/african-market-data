@@ -103,6 +103,7 @@ version = "0.1.0"
 dependencies = [
  "amd-core",
  "thiserror 2.0.20",
+ "time",
  "tracing",
 ]
 
