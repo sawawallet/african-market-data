@@ -1,12 +1,13 @@
 [package]
 name = "amd-feed"
-description = "Direct exchange feed handlers (MITCH, ITCH/MoldUDP64). Requires a market data licence; empty in the public repository."
+description = "Direct exchange feed handlers. MITCH codec built from the public LSE MIT303 specification, covering JSE, NSX and NSE Kenya."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-publish = false
 
 [dependencies]
 amd-core = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }

@@ -149,6 +149,7 @@ crates/
   amd-store       ClickHouse tick archive + Postgres reference/entitlements.
   amd-ingestor    Polls on each venue's calendar, publishes only what moved.
   amd-api         Axum. REST snapshots, SSE streaming, entitlement filtering.
+  amd-feed        MITCH codec + gap-recovery state machine (JSE, NSX, NSE).
 sdk/typescript    npm client (in progress)
 deploy/           compose stack, ClickHouse schema, Postgres migrations
 ```
@@ -174,18 +175,42 @@ Two protocol families cover the major venues:
 
 - **MITCH** (MillenniumIT) — JSE, NSX, NSE Kenya. UDP multicast A/B feeds with
   TCP replay and recovery channels. The LSE publishes the same protocol openly
-  as **MIT303**, so the codec can be built and tested before any agreement is
-  signed.
+  as **MIT303**, so `amd-feed` implements the codec today: unit header, the
+  book-building message set, implied sequencing, and the tiered gap-recovery
+  state machine — all tested offline against synthetic packets.
 - **ITCH / MoldUDP64** (Nasdaq X-Stream) — NGX, which runs X-Stream with the
   X-Gen market database and publishes a FIX 5.0 specification.
 
 `amd-core`'s `DEFAULT_SCALE` is 8 for exactly this reason: MITCH prices land
 without rescaling, and therefore without rounding at ingestion.
 
+Recovery is where feed handlers actually go wrong, so it was built before any
+production data path. Four tiers, with **per-instrument quarantine** so one gap
+degrades one symbol rather than the venue:
+
+| Tier | Trigger | Response |
+|------|---------|----------|
+| 0 | Single-path loss | A/B arbitration — take whichever line arrives first |
+| 1 | Small gap | Replay channel, rolling 65,000-message window |
+| 2 | Gap past that window, or replay budget spent | Snapshot recovery |
+| 3 | Sequence resets to 1 | Exchange failover — *not* a catastrophic gap |
+
+Two traps are handled explicitly. **A reset to 1 is a failover**, and a naive
+detector reads it as an enormous backwards jump and fires full recovery on every
+instrument at once — precisely when the exchange is already degraded. And
+**replay quotas are per CompID per day**, so a reconnect loop can burn the day's
+allowance in minutes and leave no recovery path; the handler governs itself
+rather than trusting the server to.
+
+Distinguishing a restart from an ordinary A/B duplicate is genuinely ambiguous
+from the sequence alone — both look like "a number below what we expect". The
+separating invariant is that *a single line never goes backwards except on
+restart*, so high-water marks are tracked per line rather than globally.
+
 ## Development
 
 ```bash
-cargo test --workspace                        # 33 tests, no network
+cargo test --workspace                        # 66 tests, no network
 cargo test -p amd-adapters -- --ignored       # hits the live kwayisi API
 cargo clippy --workspace --all-targets
 ```
