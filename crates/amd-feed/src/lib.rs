@@ -12,9 +12,10 @@
 //!   The LSE publishes the same protocol openly as MIT303.
 //!
 //! - **ITCH over MoldUDP64** (Nasdaq X-Stream) — NGX, which runs X-Stream with
-//!   the X-Gen market database and publishes a FIX 5.0 specification. The exact
-//!   native encoding is inferred from X-Stream deployments elsewhere and needs
-//!   confirmation against NGX's own specification.
+//!   the X-Gen market database and publishes a FIX 5.0 specification. The
+//!   transport is implemented in [`moldudp64`]; the message dictionary layered
+//!   on top is venue-specific and still needs confirmation against NGX's own
+//!   specification.
 //!
 //! Both are length-prefixed binary framed over UDP multicast with a TCP
 //! recovery path, so the intended split is one transport core — A/B
@@ -29,6 +30,13 @@
 //! and tested against synthetic packets without any agreement in place, which
 //! is the whole point: the hard part is testable before the paperwork clears.
 //!
+//! [`moldudp64`] is the NGX side of that same bet: the complete transport —
+//! downstream header, length-prefixed blocks, implied sequencing, session
+//! tracking and gap escalation — built from the **public** Nasdaq
+//! specification. It stops at the transport boundary and hands each block back
+//! as raw bytes, because the ITCH dictionary NGX publishes comes from a
+//! document distributed under agreement.
+//!
 //! What is *not* here, and will not be: venue-specific message extensions taken
 //! from documents distributed under agreement, connection credentials, and
 //! multicast group configuration. Receiving a live feed requires a market data
@@ -42,3 +50,4 @@
 
 pub mod book;
 pub mod mitch;
+pub mod moldudp64;
