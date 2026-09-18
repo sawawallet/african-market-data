@@ -105,8 +105,8 @@ and correcting one is the single most useful contribution this project takes.
 | NGX  | Nigerian Exchange | NG | NGN | 09:00–16:00 | ✅ | — |
 | JSE  | Johannesburg Stock Exchange | ZA | ZAR | 09:00–17:00 | — | — |
 | NSX  | Namibian Stock Exchange | NA | NAD | 09:00–17:00 | — | — |
-| GSE  | Ghana Stock Exchange | GH | GHS | 09:30–15:00 | — | kwayisi |
-| NSE  | Nairobi Securities Exchange | KE | KES | 09:00–15:00 | — | — |
+| GSE  | Ghana Stock Exchange | GH | GHS | 10:00–15:00 | ✅ | kwayisi |
+| NSE  | Nairobi Securities Exchange | KE | KES | 09:31–15:00 | ✅ | — |
 | EGX  | Egyptian Exchange | EG | EGP | 10:00–14:30 (Sun–Thu) | — | — |
 | BRVM | Bourse Régionale des Valeurs Mobilières | 8 UEMOA states | XOF | 09:00–15:00 | — | — |
 | CSE  | Casablanca Stock Exchange | MA | MAD | 09:30–15:20 | — | — |
@@ -232,7 +232,7 @@ downstream noticing.
 ## Development
 
 ```bash
-cargo test --workspace                        # 86 tests, no network
+cargo test --workspace                        # 110 tests, no network
 cargo test -p amd-adapters -- --ignored       # hits the live kwayisi API
 cargo clippy --workspace --all-targets
 ```
@@ -260,8 +260,14 @@ Never in production.
 The most valuable contributions, in order:
 
 1. **Verify a venue's session times** against its own published schedule and
-   flip `sessions_verified` in `crates/amd-calendar/src/registry.rs`. Sixteen
+   flip `sessions_verified` in `crates/amd-calendar/src/registry.rs`. Fourteen
    venues still need this.
+
+   Both venues verified so far were wrong the same way: the window started at
+   the pre-open or auction-call time rather than at continuous trading, because
+   that is the figure secondary listings quote as "trading hours". `sessions`
+   means the window in which trades execute continuously — an auction call is
+   `PreOpen`. Read the venue's rulebook for its phase names.
 2. **Add an adapter** for a venue that publishes free, documented data.
 3. **Holiday calendars**, once there is a source worth trusting.
 
