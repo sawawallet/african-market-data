@@ -1,0 +1,80 @@
+name: Verify a venue's trading hours
+description: Check one exchange's session times against its own published schedule
+title: "Verify session times: "
+labels: ["venue-verification", "good first issue", "help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Fourteen venues carry `sessions_verified: false` — best-effort times
+        nobody has checked. This is the most useful contribution the project
+        takes, and it needs no Rust beyond editing a struct literal.
+
+        **The trap, twice confirmed.** Both venues verified so far were wrong
+        the same way: the window started at the *pre-open* or *auction call*,
+        not at continuous trading. Secondary sites quote "trading hours" as the
+        whole schedule including order entry, and that figure gets copied.
+        `sessions` means the window in which trades execute continuously — an
+        auction call belongs to `PreOpen`.
+
+        Find the venue's own rulebook and read its phase names.
+  - type: input
+    id: venue
+    attributes:
+      label: Venue
+      description: Exchange code as it appears in the registry
+      placeholder: JSE
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Primary source
+      description: >
+        Link to the exchange's own rulebook, market notice, or schedule page.
+        Not TradingHours.com, Wikipedia, or a broker's summary — those are what
+        produced the wrong values already in the registry.
+      placeholder: https://…
+    validations:
+      required: true
+  - type: textarea
+    id: phases
+    attributes:
+      label: Session phases, quoted from the source
+      description: >
+        Paste the schedule as printed, with its own phase names. This is the
+        evidence the flag rests on.
+      placeholder: |
+        Pre-Trading:        08.45 a.m. - 8.59:59 a.m.
+        Open Auction Call:  09.00 a.m. - 09.30:59 a.m.
+        Regular Trading:    09.31 a.m. - 3.00 p.m.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: window
+    attributes:
+      label: Continuous trading window
+      description: Local wall-clock time. The phase where trades execute continuously.
+      placeholder: 09:31–15:00
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything unusual
+      description: >
+        Intraday halts, a lunch break, a closing auction after the continuous
+        phase, non-Mon-Fri trading days, a schedule change with an effective
+        date. Say so here rather than silently flattening it.
+    validations:
+      required: false
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: The window is continuous trading, not pre-open or an auction call
+        - label: "`sessions_source` records where the times came from and when they took effect"
+        - label: A test in `crates/amd-calendar/tests/sessions.rs` pins a time inside and outside the window
+        - label: "`cargo test --workspace` passes"

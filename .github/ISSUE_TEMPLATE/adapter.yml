@@ -1,0 +1,57 @@
+name: Propose a data source adapter
+description: A venue that publishes free, documented data
+title: "Adapter: "
+labels: ["adapter", "help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Only sources **unambiguously free to use** ship in this repository, and
+        it does not scrape exchange websites. Licensed feeds are registered at
+        runtime by whoever holds the licence — they do not belong here.
+
+        If you are unsure whether a source qualifies, open this anyway and say
+        so. Establishing that a source is *not* usable is a useful result and
+        saves the next person the same research.
+  - type: input
+    id: venue
+    attributes:
+      label: Venue(s) covered
+      placeholder: BRVM
+    validations:
+      required: true
+  - type: input
+    id: endpoint
+    attributes:
+      label: Source URL or API documentation
+    validations:
+      required: true
+  - type: textarea
+    id: terms
+    attributes:
+      label: Terms of use
+      description: >
+        Quote the licence or terms, and link them. "It responded to curl" is
+        not terms of use.
+    validations:
+      required: true
+  - type: dropdown
+    id: timestamps
+    attributes:
+      label: Does the source publish a timestamp per quote?
+      description: >
+        If not, every quote it produces is marked `as_of_imputed` and its delay
+        class is `Unknown`. That is fine — it just has to be declared.
+      options:
+        - "Yes, per quote"
+        - "Only a page-level timestamp"
+        - "No timestamp at all"
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Sample response
+      render: json
+    validations:
+      required: false

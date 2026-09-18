@@ -1,0 +1,34 @@
+name: Bug report
+description: Something behaves incorrectly
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: >
+        For a wrong quote, include the full `provenance` block — source, `as_of`,
+        delay class, and whether the timestamp was imputed. A stale price and a
+        flat price look identical without it.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: The exact request, or the smallest failing test.
+      render: shell
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version
+    validations:
+      required: false
