@@ -257,6 +257,12 @@ Never in production.
 
 ## Contributing
 
+**[Fourteen venues need their trading hours checked][venues]** — one issue each,
+no Rust beyond editing a struct literal. If you know one of these exchanges, you
+are better placed to fix it than anyone reading its rulebook cold.
+
+[venues]: https://github.com/sawawallet/african-market-data/issues?q=is%3Aissue+is%3Aopen+label%3Avenue-verification
+
 The most valuable contributions, in order:
 
 1. **Verify a venue's session times** against its own published schedule and
