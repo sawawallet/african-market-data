@@ -126,3 +126,62 @@ fn staleness_is_clamped_on_clock_skew() {
         0
     );
 }
+
+#[test]
+fn gse_pre_open_period_is_not_trading() {
+    // GSE rules: Pre-Open 09:30-10:00, Opening 10:00, Continuous Auction
+    // 10:00-15:00. Accra is UTC+0 year-round, so local time is UTC.
+    let gse = venue(ExchangeCode::Gse);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 09:45 UTC), gse).unwrap(),
+        SessionState::PreOpen
+    ); // inside the pre-open period: orders entered, nothing executes
+    assert_eq!(
+        session_state(datetime!(2026-08-18 10:00 UTC), gse).unwrap(),
+        SessionState::Open
+    ); // the opening
+    assert_eq!(
+        session_state(datetime!(2026-08-18 14:59 UTC), gse).unwrap(),
+        SessionState::Open
+    );
+    assert_eq!(
+        session_state(datetime!(2026-08-18 15:00 UTC), gse).unwrap(),
+        SessionState::Closed
+    ); // closing
+}
+
+#[test]
+fn nse_open_auction_call_is_not_regular_trading() {
+    // NSE rule 6.1.4: Open Auction Call 09:00-09:30:59, Regular Trading from
+    // 09:31. EAT is UTC+3 year-round.
+    let nse = venue(ExchangeCode::Nse);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 06:15 UTC), nse).unwrap(),
+        SessionState::PreOpen
+    ); // 09:15 EAT — auction call, not yet continuous
+    assert_eq!(
+        session_state(datetime!(2026-08-18 06:30 UTC), nse).unwrap(),
+        SessionState::PreOpen
+    ); // 09:30 EAT — still the auction call
+    assert_eq!(
+        session_state(datetime!(2026-08-18 06:31 UTC), nse).unwrap(),
+        SessionState::Open
+    ); // 09:31 EAT — Regular Trading begins
+    assert_eq!(
+        session_state(datetime!(2026-08-18 12:00 UTC), nse).unwrap(),
+        SessionState::Closed
+    ); // 15:00 EAT — close
+}
+
+#[test]
+fn verified_venues_cite_their_source() {
+    // A flag without a citation cannot be re-checked, which defeats the point
+    // of having the flag.
+    for v in VENUES.iter().filter(|v| v.sessions_verified) {
+        assert!(
+            v.sessions_source.is_some(),
+            "{:?} is marked verified but cites no source",
+            v.code
+        );
+    }
+}

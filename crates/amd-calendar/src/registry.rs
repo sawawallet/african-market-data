@@ -4,6 +4,13 @@
 //! best-effort session times that nobody has checked against the venue's own
 //! published schedule. They are wrong often enough to matter, and correcting
 //! one is the single most useful contribution this project takes.
+//!
+//! Both venues verified so far were wrong the same way: the window began at the
+//! pre-open or auction-call time rather than at continuous trading. Secondary
+//! listings quote "trading hours" as the whole schedule including order entry,
+//! and that is the number that gets copied. `sessions` means the window in
+//! which trades execute continuously — an auction call belongs to `PreOpen`.
+//! Check the venue's own rulebook for the phase names before flipping a flag.
 
 use amd_core::{Currency, ExchangeCode};
 
@@ -59,8 +66,14 @@ pub struct Venue {
 
 const NGX_SESSIONS: &[Window] = &[Window::new(9, 0, 16, 0)];
 const JSE_SESSIONS: &[Window] = &[Window::new(9, 0, 17, 0)];
-const GSE_SESSIONS: &[Window] = &[Window::new(9, 30, 15, 0)];
-const NSE_SESSIONS: &[Window] = &[Window::new(9, 0, 15, 0)];
+// 09:30-10:00 is the Pre-Open Period, not trading: orders are entered but
+// nothing executes until the 10:00 Opening. Modelling it as open reported a
+// market as trading half an hour before it was.
+const GSE_SESSIONS: &[Window] = &[Window::new(10, 0, 15, 0)];
+// 09:00-09:30:59 is the Open Auction Call — order entry into an auction, not
+// continuous trading, which the rules call Regular Trading and start at 09:31.
+// The 08:45 Pre-Trading phase sits earlier still.
+const NSE_SESSIONS: &[Window] = &[Window::new(9, 31, 15, 0)];
 const EGX_SESSIONS: &[Window] = &[Window::new(10, 0, 14, 30)];
 const BRVM_SESSIONS: &[Window] = &[Window::new(9, 0, 15, 0)];
 const CSE_SESSIONS: &[Window] = &[Window::new(9, 30, 15, 20)];
@@ -119,8 +132,10 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Accra",
         sessions: GSE_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "GSE Approved Trading Rules (Equities), Trading Session: Pre-Open 9:30-10:00,              Opening 10:00, Continuous Auction 10:00-15:00, Closing 15:00",
+        ),
     },
     Venue {
         code: ExchangeCode::Nse,
@@ -130,8 +145,10 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Nairobi",
         sessions: NSE_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "NSE Trading Rules for Equity Securities, rule 6.1.4: Pre-Trading 08:45-08:59:59,              Open Auction Call 09:00-09:30:59, Regular Trading 09:31-15:00, Close 15:00",
+        ),
     },
     Venue {
         code: ExchangeCode::Egx,
