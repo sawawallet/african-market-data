@@ -236,7 +236,7 @@ downstream noticing.
 ## Development
 
 ```bash
-cargo test --workspace                        # 113 tests, no network
+cargo test --workspace                        # 118 tests, no network
 cargo test -p amd-adapters -- --ignored       # hits the live kwayisi API
 cargo clippy --workspace --all-targets
 ```
