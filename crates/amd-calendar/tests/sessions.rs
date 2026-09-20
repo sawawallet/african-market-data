@@ -356,3 +356,72 @@ fn every_venue_has_at_least_one_session() {
         );
     }
 }
+
+#[test]
+fn zse_market_open_excludes_pre_open_and_post_close() {
+    // ZSE publishes Pre-Open 09:00-09:30, Market Open 09:30-13:00, Post-Close
+    // 13:00-14:30. Africa/Harare is UTC+2 year-round.
+    let zse = venue(ExchangeCode::Zse);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 07:15 UTC), zse).unwrap(),
+        SessionState::PreOpen
+    ); // 09:15 — pre-open
+    assert_eq!(
+        session_state(datetime!(2026-08-18 07:30 UTC), zse).unwrap(),
+        SessionState::Open
+    ); // 09:30 — market open
+    assert_eq!(
+        session_state(datetime!(2026-08-18 11:00 UTC), zse).unwrap(),
+        SessionState::Closed
+    ); // 13:00 — post-close begins; the old 15:30 close called this Open
+}
+
+#[test]
+fn zse_quotes_in_zwg_not_usd() {
+    // The USD entry conflated ZSE with VFEX, Zimbabwe's separate
+    // USD-denominated exchange. ZSE's own market data is reported in ZWG.
+    let zse = venue(ExchangeCode::Zse);
+    assert_eq!(zse.currency.as_str(), "ZWG");
+}
+
+#[test]
+fn mse_opens_at_0930_and_runs_to_1430() {
+    // MSE market schedule: Pre-Open 09:00-09:30, Open 09:30-14:30.
+    // Africa/Blantyre is UTC+2 year-round.
+    let mse = venue(ExchangeCode::Mse);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 07:15 UTC), mse).unwrap(),
+        SessionState::PreOpen
+    ); // 09:15
+    assert_eq!(
+        session_state(datetime!(2026-08-18 07:30 UTC), mse).unwrap(),
+        SessionState::Open
+    ); // 09:30
+    assert_eq!(
+        session_state(datetime!(2026-08-18 12:15 UTC), mse).unwrap(),
+        SessionState::Open
+    ); // 14:15 — the old 14:00 close called this Closed
+    assert_eq!(
+        session_state(datetime!(2026-08-18 12:30 UTC), mse).unwrap(),
+        SessionState::Closed
+    ); // 14:30
+}
+
+#[test]
+fn rse_formal_session_was_already_right() {
+    // The first venue whose recorded times survived checking. RSE trades by
+    // open outcry with no published auction phase, so there is no pre-open to
+    // carve out — which is exactly why it escaped the error the others made.
+    let rse = venue(ExchangeCode::Rse);
+    assert_eq!(rse.sessions.len(), 1);
+    assert_eq!(rse.sessions[0].open_min, 9 * 60);
+    assert_eq!(rse.sessions[0].close_min, 12 * 60);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 07:00 UTC), rse).unwrap(),
+        SessionState::Open
+    ); // 09:00 EAT (UTC+2 in Kigali)
+    assert_eq!(
+        session_state(datetime!(2026-08-18 10:00 UTC), rse).unwrap(),
+        SessionState::Closed
+    ); // 12:00
+}

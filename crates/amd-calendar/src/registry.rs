@@ -95,8 +95,14 @@ const LUSE_SESSIONS: &[Window] = &[Window::new(10, 0, 14, 0)];
 // trading, which the DSE's own schedule starts at 09:31 and closes at 16:00.
 const DSE_SESSIONS: &[Window] = &[Window::new(9, 31, 16, 0)];
 const USE_SESSIONS: &[Window] = &[Window::new(9, 30, 12, 0)];
-const ZSE_SESSIONS: &[Window] = &[Window::new(9, 0, 15, 30)];
-const MSE_SESSIONS: &[Window] = &[Window::new(9, 0, 14, 0)];
+// ZSE publishes Pre-Open 09:00-09:30, Market Open 09:30-13:00, Post-Close
+// 13:00-14:30. The old 09:00-15:30 took in the pre-open at one end and ran an
+// hour past the post-close at the other.
+const ZSE_SESSIONS: &[Window] = &[Window::new(9, 30, 13, 0)];
+// MSE's market schedule: Pre-Open 09:00-09:30, Open 09:30-14:30, Close
+// 14:30-15:00. The registry opened during the pre-open and shut half an hour
+// before the market actually did.
+const MSE_SESSIONS: &[Window] = &[Window::new(9, 30, 14, 30)];
 const RSE_SESSIONS: &[Window] = &[Window::new(9, 0, 12, 0)];
 const BVMT_SESSIONS: &[Window] = &[Window::new(9, 0, 14, 10)];
 
@@ -267,12 +273,19 @@ pub static VENUES: &[Venue] = &[
         code: ExchangeCode::Zse,
         name: "Zimbabwe Stock Exchange",
         countries: &["ZW"],
-        currency: Currency::USD,
+        // ZWG, not USD. The exchange's own market panel reports Turnover and
+        // Market Cap in ZWG and does not mention USD at all. The USD entry
+        // looks like a conflation with VFEX, Zimbabwe's separate
+        // USD-denominated exchange, which is not in this registry.
+        currency: Currency::new(*b"ZWG"),
         timezone: "Africa/Harare",
         sessions: ZSE_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "ZSE published trading hours (Mon-Fri, excluding public holidays): \
+             Pre-Open 09:00-09:30, Market Open 09:30-13:00, Post-Close 13:00-14:30",
+        ),
     },
     Venue {
         code: ExchangeCode::Mse,
@@ -282,8 +295,11 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Blantyre",
         sessions: MSE_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "MSE published market schedule: Pre-Open 09:00-09:30, Open 09:30-14:30, \
+             Close 14:30-15:00",
+        ),
     },
     Venue {
         code: ExchangeCode::Rse,
@@ -293,8 +309,14 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Kigali",
         sessions: RSE_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "RSE trading systems page: open-outcry session on the floor during formal \
+             trading hours 09:00-12:00, alongside an OTC market. No auction or pre-open \
+             phase is published, so unlike the electronic venues here there is none to \
+             exclude — the window is the whole formal session, and the existing value \
+             was already correct",
+        ),
     },
     Venue {
         code: ExchangeCode::Bvmt,
