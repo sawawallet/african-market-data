@@ -267,3 +267,92 @@ fn brvm_opens_at_the_fixing_not_at_pre_opening() {
         SessionState::Closed
     ); // 14:00 — continuous ends; pre-cloture and last-price are not continuous
 }
+
+// ---------------------------------------------------------------------------
+// Registry invariants.
+//
+// Eleven venues still carry unchecked times, and correcting one is a change to
+// a struct literal made by someone who knows the exchange rather than the code.
+// These guard the shapes that are easy to get wrong by hand and silent when
+// wrong: a window that ends before it starts is simply never open, and nothing
+// else in the system would complain.
+// ---------------------------------------------------------------------------
+
+/// Minutes in a day. A window is expressed as minutes past local midnight.
+const DAY: u16 = 24 * 60;
+
+#[test]
+fn every_window_opens_before_it_closes() {
+    for v in VENUES {
+        for w in v.sessions {
+            assert!(
+                w.open_min < w.close_min,
+                "{:?} has a window that opens at {} and closes at {} — it can never be open",
+                v.code,
+                w.open_min,
+                w.close_min
+            );
+        }
+    }
+}
+
+#[test]
+fn every_window_falls_inside_a_day() {
+    for v in VENUES {
+        for w in v.sessions {
+            assert!(
+                w.close_min <= DAY,
+                "{:?} has a window closing at minute {}, past midnight — sessions do not \
+                 currently span days, so this is a typo rather than an overnight venue",
+                v.code,
+                w.close_min
+            );
+        }
+    }
+}
+
+#[test]
+fn multi_window_venues_are_ordered_and_disjoint() {
+    // Botswana trades in two blocks either side of an intra-day auction. Any
+    // venue with more than one window must list them in order and leave a real
+    // gap: overlapping windows would mean the break is not a break, and
+    // out-of-order ones make `earliest_open` — which decides PreOpen vs Closed
+    // — read from the wrong window.
+    for v in VENUES {
+        for pair in v.sessions.windows(2) {
+            let (a, b) = (pair[0], pair[1]);
+            assert!(
+                a.close_min <= b.open_min,
+                "{:?} lists windows out of order or overlapping: {}-{} then {}-{}",
+                v.code,
+                a.open_min,
+                a.close_min,
+                b.open_min,
+                b.close_min
+            );
+        }
+    }
+}
+
+#[test]
+fn every_venue_trades_on_at_least_one_weekday() {
+    // A zero mask parses fine and silently reports the venue closed forever.
+    for v in VENUES {
+        assert!(
+            v.trading_days != 0,
+            "{:?} has an empty trading_days mask and would never open",
+            v.code
+        );
+    }
+}
+
+#[test]
+fn every_venue_has_at_least_one_session() {
+    for v in VENUES {
+        assert!(
+            !v.sessions.is_empty(),
+            "{:?} has no trading window at all",
+            v.code
+        );
+    }
+}
