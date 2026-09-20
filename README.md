@@ -108,17 +108,21 @@ and correcting one is the single most useful contribution this project takes.
 | GSE  | Ghana Stock Exchange | GH | GHS | 10:00–15:00 | ✅ | kwayisi |
 | NSE  | Nairobi Securities Exchange | KE | KES | 09:31–15:00 | ✅ | — |
 | EGX  | Egyptian Exchange | EG | EGP | 10:00–14:30 (Sun–Thu) | — | — |
-| BRVM | Bourse Régionale des Valeurs Mobilières | 8 UEMOA states | XOF | 09:00–15:00 | — | — |
+| BRVM | Bourse Régionale des Valeurs Mobilières | 8 UEMOA states | XOF | 09:45–14:00 | ✅ | — |
 | CSE  | Casablanca Stock Exchange | MA | MAD | 09:30–15:20 | — | — |
 | SEM  | Stock Exchange of Mauritius | MU | MUR | 09:00–13:30 | — | — |
-| BSE  | Botswana Stock Exchange | BW | BWP | 09:00–13:00 | — | — |
+| BSE  | Botswana Stock Exchange | BW | BWP | 10:25–11:55, 12:05–13:20 | ✅ | — |
 | LUSE | Lusaka Securities Exchange | ZM | ZMW | 10:00–14:00 | — | — |
-| DSE  | Dar es Salaam Stock Exchange | TZ | TZS | 10:00–15:30 | — | — |
+| DSE  | Dar es Salaam Stock Exchange | TZ | TZS | 09:31–16:00 | ✅ | — |
 | USE  | Uganda Securities Exchange | UG | UGX | 09:30–12:00 | — | — |
 | ZSE  | Zimbabwe Stock Exchange | ZW | USD | 09:00–15:30 | — | — |
 | MSE  | Malawi Stock Exchange | MW | MWK | 09:00–14:00 | — | — |
 | RSE  | Rwanda Stock Exchange | RW | RWF | 09:00–12:00 | — | — |
 | BVMT | Bourse de Tunis | TN | TND | 09:00–14:10 | — | — |
+
+A venue with two windows lists both: Botswana trades either side of a
+ten-minute intra-day auction, and `sessions` is an array precisely so that gap
+is representable rather than flattened into one long window.
 
 **Public holidays are not modelled.** A wrong holiday calendar is worse than an
 absent one, because it silently reports a closed market as open. `session_state`
@@ -232,7 +236,7 @@ downstream noticing.
 ## Development
 
 ```bash
-cargo test --workspace                        # 110 tests, no network
+cargo test --workspace                        # 113 tests, no network
 cargo test -p amd-adapters -- --ignored       # hits the live kwayisi API
 cargo clippy --workspace --all-targets
 ```
@@ -257,7 +261,7 @@ Never in production.
 
 ## Contributing
 
-**[Fourteen venues need their trading hours checked][venues]** — one issue each,
+**[Eleven venues need their trading hours checked][venues]** — one issue each,
 no Rust beyond editing a struct literal. If you know one of these exchanges, you
 are better placed to fix it than anyone reading its rulebook cold.
 
@@ -266,7 +270,7 @@ are better placed to fix it than anyone reading its rulebook cold.
 The most valuable contributions, in order:
 
 1. **Verify a venue's session times** against its own published schedule and
-   flip `sessions_verified` in `crates/amd-calendar/src/registry.rs`. Fourteen
+   flip `sessions_verified` in `crates/amd-calendar/src/registry.rs`. Eleven
    venues still need this.
 
    Both venues verified so far were wrong the same way: the window started at
