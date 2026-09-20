@@ -100,6 +100,10 @@ Seventeen venues are modelled. `verified` means the session times were checked
 against the exchange's own published schedule — **the rest are best effort**,
 and correcting one is the single most useful contribution this project takes.
 
+Of the nine checked so far, **eight were wrong**. Most began at a pre-open or
+auction phase rather than at trading, and two were also wrong at the close.
+Read an unverified row as unknown, not as probably-right.
+
 | Code | Exchange | Country | Currency | Session (local) | Verified | Data source |
 |------|----------|---------|----------|-----------------|----------|-------------|
 | NGX  | Nigerian Exchange | NG | NGN | 09:00–16:00 | ✅ | — |
@@ -115,9 +119,9 @@ and correcting one is the single most useful contribution this project takes.
 | LUSE | Lusaka Securities Exchange | ZM | ZMW | 10:00–14:00 | — | — |
 | DSE  | Dar es Salaam Stock Exchange | TZ | TZS | 09:31–16:00 | ✅ | — |
 | USE  | Uganda Securities Exchange | UG | UGX | 09:30–12:00 | — | — |
-| ZSE  | Zimbabwe Stock Exchange | ZW | USD | 09:00–15:30 | — | — |
-| MSE  | Malawi Stock Exchange | MW | MWK | 09:00–14:00 | — | — |
-| RSE  | Rwanda Stock Exchange | RW | RWF | 09:00–12:00 | — | — |
+| ZSE  | Zimbabwe Stock Exchange | ZW | ZWG | 09:30–13:00 | ✅ | — |
+| MSE  | Malawi Stock Exchange | MW | MWK | 09:30–14:30 | ✅ | — |
+| RSE  | Rwanda Stock Exchange | RW | RWF | 09:00–12:00 | ✅ | — |
 | BVMT | Bourse de Tunis | TN | TND | 09:00–14:10 | — | — |
 
 A venue with two windows lists both: Botswana trades either side of a
@@ -236,7 +240,7 @@ downstream noticing.
 ## Development
 
 ```bash
-cargo test --workspace                        # 118 tests, no network
+cargo test --workspace                        # 122 tests, no network
 cargo test -p amd-adapters -- --ignored       # hits the live kwayisi API
 cargo clippy --workspace --all-targets
 ```
@@ -261,7 +265,7 @@ Never in production.
 
 ## Contributing
 
-**[Eleven venues need their trading hours checked][venues]** — one issue each,
+**[Eight venues need their trading hours checked][venues]** — one issue each,
 no Rust beyond editing a struct literal. If you know one of these exchanges, you
 are better placed to fix it than anyone reading its rulebook cold.
 
@@ -270,14 +274,18 @@ are better placed to fix it than anyone reading its rulebook cold.
 The most valuable contributions, in order:
 
 1. **Verify a venue's session times** against its own published schedule and
-   flip `sessions_verified` in `crates/amd-calendar/src/registry.rs`. Eleven
+   flip `sessions_verified` in `crates/amd-calendar/src/registry.rs`. Eight
    venues still need this.
 
-   Both venues verified so far were wrong the same way: the window started at
-   the pre-open or auction-call time rather than at continuous trading, because
+   Nearly every venue checked so far was wrong the same way: the window
+   started at the pre-open or auction-call time rather than at trading, because
    that is the figure secondary listings quote as "trading hours". `sessions`
-   means the window in which trades execute continuously — an auction call is
-   `PreOpen`. Read the venue's rulebook for its phase names.
+   means the window in which trades execute — an auction call is `PreOpen`.
+   Read the venue's rulebook for its phase names.
+
+   Rwanda is the exception worth knowing about: it trades by open outcry with
+   no published auction phase, so its recorded times were already right. When
+   there is no pre-open, there is nothing to carve out.
 2. **Add an adapter** for a venue that publishes free, documented data.
 3. **Holiday calendars**, once there is a source worth trusting.
 
