@@ -75,12 +75,25 @@ const GSE_SESSIONS: &[Window] = &[Window::new(10, 0, 15, 0)];
 // The 08:45 Pre-Trading phase sits earlier still.
 const NSE_SESSIONS: &[Window] = &[Window::new(9, 31, 15, 0)];
 const EGX_SESSIONS: &[Window] = &[Window::new(10, 0, 14, 30)];
-const BRVM_SESSIONS: &[Window] = &[Window::new(9, 0, 15, 0)];
+// BRVM's published schedule is in UTC, which for Abidjan is also local time
+// (Cote d'Ivoire keeps UTC+0 year-round and observes no DST) — so these read
+// as wall-clock without conversion. 09:00-09:45 is pre-opening and the 09:45
+// fixing opens the book; after continuous trading ends at 14:00 the venue runs
+// pre-closing, a closing fixing, then last-price trading to 15:00. Only the
+// phase BRVM itself calls "cotation continue" is modelled here.
+const BRVM_SESSIONS: &[Window] = &[Window::new(9, 45, 14, 0)];
 const CSE_SESSIONS: &[Window] = &[Window::new(9, 30, 15, 20)];
 const SEM_SESSIONS: &[Window] = &[Window::new(9, 0, 13, 30)];
-const BSE_SESSIONS: &[Window] = &[Window::new(9, 0, 13, 0)];
+// Botswana runs two regular trading sessions either side of a ten-minute
+// intra-day auction, so this is the first venue here with more than one
+// window. The auction between them is deliberately not covered: nothing trades
+// continuously at 12:00, and claiming otherwise is the error this field exists
+// to avoid. Auction-call and post-close phases sit outside both windows.
+const BSE_SESSIONS: &[Window] = &[Window::new(10, 25, 11, 55), Window::new(12, 5, 13, 20)];
 const LUSE_SESSIONS: &[Window] = &[Window::new(10, 0, 14, 0)];
-const DSE_SESSIONS: &[Window] = &[Window::new(10, 0, 15, 30)];
+// Pre-Opening 09:00-09:29 and the 09:30 Opening Auction precede continuous
+// trading, which the DSE's own schedule starts at 09:31 and closes at 16:00.
+const DSE_SESSIONS: &[Window] = &[Window::new(9, 31, 16, 0)];
 const USE_SESSIONS: &[Window] = &[Window::new(9, 30, 12, 0)];
 const ZSE_SESSIONS: &[Window] = &[Window::new(9, 0, 15, 30)];
 const MSE_SESSIONS: &[Window] = &[Window::new(9, 0, 14, 0)];
@@ -169,8 +182,13 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Abidjan",
         sessions: BRVM_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "BRVM horaires de cotation (times published in UTC = Abidjan local): \
+             pre-ouverture 09:00-09:45, fixing d'ouverture 09:45, cotation continue \
+             09:45-14:00, pre-cloture 14:00-14:30, fixing de cloture 14:30, cotation au \
+             dernier cours 14:30-15:00, cloture 15:00",
+        ),
     },
     Venue {
         code: ExchangeCode::Cse,
@@ -202,8 +220,12 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Gaborone",
         sessions: BSE_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "BSE published market hours: Pre-trading 10:00-10:10, Opening Auction Call \
+             10:10-10:25, Regular Trading 1 10:25-11:55, Intra-Day Auction 11:55-12:05, \
+             Regular Trading 2 12:05-13:20, Closing Auction Call 13:20-13:30, close 14:00",
+        ),
     },
     Venue {
         code: ExchangeCode::Luse,
@@ -224,8 +246,11 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Dar_es_Salaam",
         sessions: DSE_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "DSE Circular 75, Tenth Schedule (Rules 173(3), 197(1)), in force 2 June 2025: \
+             Pre-Opening 09:00-09:29, Opening Auction 09:30, Continuous 09:31-16:00, Close 16:00",
+        ),
     },
     Venue {
         code: ExchangeCode::Use,

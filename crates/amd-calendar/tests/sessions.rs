@@ -185,3 +185,85 @@ fn verified_venues_cite_their_source() {
         );
     }
 }
+
+#[test]
+fn dse_continuous_trading_starts_after_the_opening_auction() {
+    // DSE Circular 75 (in force 2 June 2025): Pre-Opening 09:00-09:29, Opening
+    // Auction 09:30, Continuous 09:31-16:00. EAT is UTC+3 year-round.
+    let dse = venue(ExchangeCode::Dse);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 06:15 UTC), dse).unwrap(),
+        SessionState::PreOpen
+    ); // 09:15 EAT — pre-opening
+    assert_eq!(
+        session_state(datetime!(2026-08-18 06:30 UTC), dse).unwrap(),
+        SessionState::PreOpen
+    ); // 09:30 EAT — the opening auction itself
+    assert_eq!(
+        session_state(datetime!(2026-08-18 06:31 UTC), dse).unwrap(),
+        SessionState::Open
+    ); // 09:31 EAT — continuous begins
+    assert_eq!(
+        session_state(datetime!(2026-08-18 12:30 UTC), dse).unwrap(),
+        SessionState::Open
+    ); // 15:30 EAT — under the old 15:30 close this was wrongly Closed
+    assert_eq!(
+        session_state(datetime!(2026-08-18 13:00 UTC), dse).unwrap(),
+        SessionState::Closed
+    ); // 16:00 EAT — close
+}
+
+#[test]
+fn bse_has_two_windows_around_the_intraday_auction() {
+    // Botswana is the one venue here that trades in two separate continuous
+    // blocks. Africa/Gaborone is UTC+2 year-round.
+    let bse = venue(ExchangeCode::Bse);
+    assert_eq!(
+        bse.sessions.len(),
+        2,
+        "BSE should carry two trading windows"
+    );
+    assert_eq!(
+        session_state(datetime!(2026-08-18 08:20 UTC), bse).unwrap(),
+        SessionState::PreOpen
+    ); // 10:20 — opening auction call, not yet trading
+    assert_eq!(
+        session_state(datetime!(2026-08-18 08:30 UTC), bse).unwrap(),
+        SessionState::Open
+    ); // 10:30 — regular trading 1
+    assert_eq!(
+        session_state(datetime!(2026-08-18 10:00 UTC), bse).unwrap(),
+        SessionState::Closed
+    ); // 12:00 — intra-day auction: nothing trades continuously
+    assert_eq!(
+        session_state(datetime!(2026-08-18 10:30 UTC), bse).unwrap(),
+        SessionState::Open
+    ); // 12:30 — regular trading 2
+    assert_eq!(
+        session_state(datetime!(2026-08-18 11:30 UTC), bse).unwrap(),
+        SessionState::Closed
+    ); // 13:30 — closing auction call has begun
+}
+
+#[test]
+fn brvm_opens_at_the_fixing_not_at_pre_opening() {
+    // BRVM publishes in UTC, and Abidjan is UTC+0 year-round with no DST, so
+    // the published times are also local wall-clock.
+    let brvm = venue(ExchangeCode::Brvm);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 09:30 UTC), brvm).unwrap(),
+        SessionState::PreOpen
+    ); // 09:30 — pre-ouverture
+    assert_eq!(
+        session_state(datetime!(2026-08-18 09:45 UTC), brvm).unwrap(),
+        SessionState::Open
+    ); // 09:45 — fixing d'ouverture opens continuous trading
+    assert_eq!(
+        session_state(datetime!(2026-08-18 13:59 UTC), brvm).unwrap(),
+        SessionState::Open
+    );
+    assert_eq!(
+        session_state(datetime!(2026-08-18 14:00 UTC), brvm).unwrap(),
+        SessionState::Closed
+    ); // 14:00 — continuous ends; pre-cloture and last-price are not continuous
+}
