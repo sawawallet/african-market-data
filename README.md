@@ -122,7 +122,7 @@ Read an unverified row as unknown, not as probably-right.
 | ZSE  | Zimbabwe Stock Exchange | ZW | ZWG | 09:30–13:00 | ✅ | — |
 | MSE  | Malawi Stock Exchange | MW | MWK | 09:30–14:30 | ✅ | — |
 | RSE  | Rwanda Stock Exchange | RW | RWF | 09:00–12:00 | ✅ | — |
-| BVMT | Bourse de Tunis | TN | TND | 09:00–14:10 | — | — |
+| BVMT | Bourse de Tunis | TN | TND | 09:00–14:00 | ✅ | — |
 
 A venue with two windows lists both: Botswana trades either side of a
 ten-minute intra-day auction, and `sessions` is an array precisely so that gap
@@ -277,15 +277,22 @@ The most valuable contributions, in order:
    flip `sessions_verified` in `crates/amd-calendar/src/registry.rs`. Eight
    venues still need this.
 
-   Nearly every venue checked so far was wrong the same way: the window
-   started at the pre-open or auction-call time rather than at trading, because
-   that is the figure secondary listings quote as "trading hours". `sessions`
-   means the window in which trades execute — an auction call is `PreOpen`.
-   Read the venue's rulebook for its phase names.
+   The venues verified so far were wrong in two recurring ways. Most started
+   the window at the pre-open or auction-call time rather than at continuous
+   trading, because that is the figure secondary listings quote as "trading
+   hours". The rest ended it inside the closing sequence: Bourse de Tunis was
+   recorded as closing at 14:10, which is its closing fixing and last-price
+   window, not the end of `cotation continue` at 14:00. `sessions` means the
+   window in which trades execute continuously — an auction call is `PreOpen`.
+   Some venues also run seasonal schedules (BVMT publishes a separate winter
+   and summer avis, plus a Ramadan variant), so check which one is in force
+   and say so in the source note. Read the venue's rulebook for its phase
+   names.
 
    Rwanda is the exception worth knowing about: it trades by open outcry with
-   no published auction phase, so its recorded times were already right. When
-   there is no pre-open, there is nothing to carve out.
+   no published auction phase, so its recorded times were already right, and
+   its earlier correction was for a different reason. When there is no
+   pre-open, there is nothing to carve out.
 2. **Add an adapter** for a venue that publishes free, documented data.
 3. **Holiday calendars**, once there is a source worth trusting.
 

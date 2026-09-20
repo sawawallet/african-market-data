@@ -152,9 +152,9 @@ export const EXCHANGES: Readonly<Record<ExchangeCode, Exchange>> = Object.freeze
     countries: ["ZW"],
     currency: "USD",
     timezone: "Africa/Harare",
-    sessions: [{ open: "09:00", close: "15:30" }],
+    sessions: [{ open: "09:30", close: "13:00" }],
     tradingDays: MON_TO_FRI,
-    sessionsVerified: false,
+    sessionsVerified: true,
   },
   MSE: {
     code: "MSE",
@@ -182,9 +182,9 @@ export const EXCHANGES: Readonly<Record<ExchangeCode, Exchange>> = Object.freeze
     countries: ["TN"],
     currency: "TND",
     timezone: "Africa/Tunis",
-    sessions: [{ open: "09:00", close: "14:10" }],
+    sessions: [{ open: "09:00", close: "14:00" }],
     tradingDays: MON_TO_FRI,
-    sessionsVerified: false,
+    sessionsVerified: true,
   },
 });
 
