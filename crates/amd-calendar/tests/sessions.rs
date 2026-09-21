@@ -425,3 +425,24 @@ fn rse_formal_session_was_already_right() {
         SessionState::Closed
     ); // 12:00
 }
+
+#[test]
+fn bvmt_continuous_trading_ends_at_1400_tunis() {
+    // Africa/Tunis is UTC+1 year-round. BVMT's winter avis runs continuous
+    // trading 09:00-14:00 (cotation continue); 14:05 is the closing fixing and
+    // 14:05-14:15 the last-price window. The old 09:00-14:10 close fell inside
+    // that closing sequence rather than at the end of continuous trading.
+    let bvmt = venue(ExchangeCode::Bvmt);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 08:30 UTC), bvmt).unwrap(),
+        SessionState::Open
+    ); // 09:30 Tunis — continuous
+    assert_eq!(
+        session_state(datetime!(2026-08-18 12:30 UTC), bvmt).unwrap(),
+        SessionState::Open
+    ); // 13:30 Tunis — still continuous
+    assert_eq!(
+        session_state(datetime!(2026-08-18 13:30 UTC), bvmt).unwrap(),
+        SessionState::Closed
+    ); // 14:30 Tunis — the old 14:10 close called this Open
+}

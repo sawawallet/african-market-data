@@ -104,7 +104,14 @@ const ZSE_SESSIONS: &[Window] = &[Window::new(9, 30, 13, 0)];
 // before the market actually did.
 const MSE_SESSIONS: &[Window] = &[Window::new(9, 30, 14, 30)];
 const RSE_SESSIONS: &[Window] = &[Window::new(9, 0, 12, 0)];
-const BVMT_SESSIONS: &[Window] = &[Window::new(9, 0, 14, 10)];
+// BVMT runs two seasonal schedules and publishes both as its own avis: winter
+// (from 1 September) has continuous trading 09:00-14:00, summer (1 July-31
+// August) 09:00-12:00. The 08:30 pre-open is order entry, and the 14:05 closing
+// fixing plus 14:05-14:15 last-price trading follow the close. The old close of
+// 14:10 fell inside that closing sequence, not at the end of continuous
+// trading. Only the standard winter window is modelled; the summer window and
+// the Ramadan variant are not.
+const BVMT_SESSIONS: &[Window] = &[Window::new(9, 0, 14, 0)];
 
 pub static VENUES: &[Venue] = &[
     Venue {
@@ -283,8 +290,7 @@ pub static VENUES: &[Venue] = &[
         trading_days: MON_FRI,
         sessions_verified: true,
         sessions_source: Some(
-            "ZSE published trading hours (Mon-Fri, excluding public holidays): \
-             Pre-Open 09:00-09:30, Market Open 09:30-13:00, Post-Close 13:00-14:30",
+            "ZSE site footer \"Trading Hours\": Pre-Open 09:00-09:30, Market Open 09:30-13:00, Post-Close 13:00-14:30 (zse.co.zw)",
         ),
     },
     Venue {
@@ -326,8 +332,10 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Tunis",
         sessions: BVMT_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "BVMT avis \"Horaire de cotation hiver\" 2026 (from 1 Sep): continu 09:00-14:00, fixing 14:05; tunis-stockexchange.com/horaires",
+        ),
     },
 ];
 
