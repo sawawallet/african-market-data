@@ -104,7 +104,15 @@ const ZSE_SESSIONS: &[Window] = &[Window::new(9, 30, 13, 0)];
 // before the market actually did.
 const MSE_SESSIONS: &[Window] = &[Window::new(9, 30, 14, 30)];
 const RSE_SESSIONS: &[Window] = &[Window::new(9, 0, 12, 0)];
-const BVMT_SESSIONS: &[Window] = &[Window::new(9, 0, 14, 10)];
+// BVMT's own printed schedule (Avis de la Bourse, "Horaire de cotation", winter
+// schedule effective 2025-04-02): for Marché Principal group 11 (continuous
+// equities) Pre-open is 08:30, continuous trading runs 09:00-14:00, the closing
+// fixing prints at 14:05, and 14:05-14:15 is last-price trading. The registry
+// said 09:00-14:10 — right on the open by luck, but 14:10 is inside the closing
+// auction, and the 2011 predecessor notice it was copied from had continuous
+// trading starting at 10:00, i.e. the old value straddled two different
+// schedules at once.
+const BVMT_SESSIONS: &[Window] = &[Window::new(9, 0, 14, 0)];
 
 pub static VENUES: &[Venue] = &[
     Venue {
@@ -326,8 +334,10 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Tunis",
         sessions: BVMT_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "BVMT Avis de la Bourse, Horaire de cotation (hiver) effective 2025-04-02: G11 Pre-open 08:30, Continuous 09:00-14:00, Closing fixing 14:05, Last-price 14:05-14:15",
+        ),
     },
 ];
 
