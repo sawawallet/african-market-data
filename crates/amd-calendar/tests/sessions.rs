@@ -425,3 +425,93 @@ fn rse_formal_session_was_already_right() {
         SessionState::Closed
     ); // 12:00
 }
+
+#[test]
+fn jse_continuous_trading_ends_at_the_closing_auction_call() {
+    // JSE Directive BU table BU1: Continuous Trading 1 runs 09:00-16:50;
+    // 16:50-17:00 is the Closing Auction Call. The old 09:00-17:00 close
+    // counted the closing auction as continuous trading.
+    // Africa/Johannesburg is SAST (UTC+2) year-round.
+    let jse = venue(ExchangeCode::Jse);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 06:30 UTC), jse).unwrap(),
+        SessionState::PreOpen
+    ); // 08:30 — the opening auction call, not yet continuous
+    assert_eq!(
+        session_state(datetime!(2026-08-18 07:00 UTC), jse).unwrap(),
+        SessionState::Open
+    ); // 09:00 — continuous begins
+    assert_eq!(
+        session_state(datetime!(2026-08-18 14:45 UTC), jse).unwrap(),
+        SessionState::Open
+    ); // 16:45 — still continuous
+    assert_eq!(
+        session_state(datetime!(2026-08-18 14:50 UTC), jse).unwrap(),
+        SessionState::Closed
+    ); // 16:50 — close; the old 17:00 close called this Open
+}
+
+#[test]
+fn jse_and_nsx_do_not_share_a_window() {
+    // NSX trades on JSE infrastructure but publishes its own 09:00-17:00
+    // window, so the two must not be aliased to one constant.
+    let jse = venue(ExchangeCode::Jse);
+    let nsx = venue(ExchangeCode::Nsx);
+    assert_eq!(jse.sessions[0].close_min, 16 * 60 + 50);
+    assert_eq!(nsx.sessions[0].close_min, 17 * 60);
+}
+
+#[test]
+fn egx_main_market_continuous_trading_ends_at_1415() {
+    // EGX "Trading Hours": Main Market Continuous 10:00-14:15. The old 14:30
+    // close is the Bonds-PD / SMEs close, not the main market's.
+    // Africa/Cairo is UTC+3 during the August DST window.
+    let egx = venue(ExchangeCode::Egx);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 11:10 UTC), egx).unwrap(),
+        SessionState::Open
+    ); // 14:10 — still continuous
+    assert_eq!(
+        session_state(datetime!(2026-08-18 11:15 UTC), egx).unwrap(),
+        SessionState::Closed
+    ); // 14:15 — close; the old 14:30 close called this Open
+}
+
+#[test]
+fn cse_continuous_trading_runs_to_1520() {
+    // Casablanca Group 01: Regular Trading (continuous) ends 15:20, then a
+    // closing auction. Africa/Casablanca is UTC+1 year-round.
+    let cse = venue(ExchangeCode::Cse);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 14:10 UTC), cse).unwrap(),
+        SessionState::Open
+    ); // 15:10 — continuous
+    assert_eq!(
+        session_state(datetime!(2026-08-18 14:20 UTC), cse).unwrap(),
+        SessionState::Closed
+    ); // 15:20 — close
+}
+
+#[test]
+fn sem_continuous_trading_reflects_the_2026_extension() {
+    // SEM extended its hours effective 2026-04-20: Pre-opening 09:00-09:30,
+    // Continuous 09:30-15:00. The old 09:00-13:30 predates the extension.
+    // Indian/Mauritius is UTC+4 year-round.
+    let sem = venue(ExchangeCode::Sem);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 05:15 UTC), sem).unwrap(),
+        SessionState::PreOpen
+    ); // 09:15 — pre-opening, nothing executes
+    assert_eq!(
+        session_state(datetime!(2026-08-18 05:30 UTC), sem).unwrap(),
+        SessionState::Open
+    ); // 09:30 — continuous begins; the old window opened at 09:00
+    assert_eq!(
+        session_state(datetime!(2026-08-18 10:00 UTC), sem).unwrap(),
+        SessionState::Open
+    ); // 14:00 — the old 13:30 close called this Closed
+    assert_eq!(
+        session_state(datetime!(2026-08-18 11:00 UTC), sem).unwrap(),
+        SessionState::Closed
+    ); // 15:00 — close
+}
