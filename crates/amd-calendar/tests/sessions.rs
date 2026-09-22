@@ -425,3 +425,38 @@ fn rse_formal_session_was_already_right() {
         SessionState::Closed
     ); // 12:00
 }
+
+#[test]
+fn bvmt_continuous_trading_ends_at_the_closing_fixing() {
+    // BVMT's own printed schedule — Avis de la Bourse, "Horaire de cotation",
+    // winter schedule effective 2025-04-02 — for Marché Principal group 11
+    // (continuous equities): Pre-open 08:30, Négociation (continuous)
+    // 09:00-14:00, Fixing de clôture 14:05, Négociation au dernier cours
+    // 14:05-14:15. Tunisia is UTC+1 year-round (DST abolished 2009), so local
+    // wall-clock is UTC+1 and there is no seasonal offset to fold in.
+    let bvmt = venue(ExchangeCode::Bvmt);
+    assert_eq!(bvmt.sessions.len(), 1);
+    assert_eq!(bvmt.sessions[0].open_min, 9 * 60);
+    assert_eq!(bvmt.sessions[0].close_min, 14 * 60);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 07:30 UTC), bvmt).unwrap(),
+        SessionState::PreOpen
+    ); // 08:30 local — pre-open, nothing has traded continuously yet
+    assert_eq!(
+        session_state(datetime!(2026-08-18 08:00 UTC), bvmt).unwrap(),
+        SessionState::Open
+    ); // 09:00 local — continuous trading opens
+    assert_eq!(
+        session_state(datetime!(2026-08-18 12:59 UTC), bvmt).unwrap(),
+        SessionState::Open
+    ); // 13:59 local — still continuous
+    assert_eq!(
+        session_state(datetime!(2026-08-18 13:00 UTC), bvmt).unwrap(),
+        SessionState::Closed
+    ); // 14:00 local — continuous ends; the closing fixing and last-price
+       // window (14:05-14:15) are not continuous trading
+    assert_eq!(
+        session_state(datetime!(2026-08-18 13:05 UTC), bvmt).unwrap(),
+        SessionState::Closed
+    ); // 14:05 local — the old 14:10 close called this Open
+}
