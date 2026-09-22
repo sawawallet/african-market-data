@@ -65,7 +65,14 @@ pub struct Venue {
 }
 
 const NGX_SESSIONS: &[Window] = &[Window::new(9, 0, 16, 0)];
-const JSE_SESSIONS: &[Window] = &[Window::new(9, 0, 17, 0)];
+// JSE Equities Directives, Directive BU table BU1: continuous trading is
+// 09:00-16:50 on a normal business day. 16:50-17:00 is the Closing Auction
+// Call, not continuous trading, so the registry's old end of 17:00 counted the
+// closing auction as trading time. NSX is deliberately given its own constant:
+// it trades on JSE infrastructure but publishes 09:00-17:00, so sharing this
+// array would silently move NSX by ten minutes.
+const JSE_SESSIONS: &[Window] = &[Window::new(9, 0, 16, 50)];
+const NSX_SESSIONS: &[Window] = &[Window::new(9, 0, 17, 0)];
 // 09:30-10:00 is the Pre-Open Period, not trading: orders are entered but
 // nothing executes until the 10:00 Opening. Modelling it as open reported a
 // market as trading half an hour before it was.
@@ -74,7 +81,12 @@ const GSE_SESSIONS: &[Window] = &[Window::new(10, 0, 15, 0)];
 // continuous trading, which the rules call Regular Trading and start at 09:31.
 // The 08:45 Pre-Trading phase sits earlier still.
 const NSE_SESSIONS: &[Window] = &[Window::new(9, 31, 15, 0)];
-const EGX_SESSIONS: &[Window] = &[Window::new(10, 0, 14, 30)];
+// EGX "Trading Hours": Main Market Discovery 09:30-10:00, Continuous Trading
+// 10:00-14:15, Closing Auction 14:15-14:25, Trade-at-Close 14:25-14:30. The
+// main-market continuous window ends at 14:15; 14:30 is the close for the
+// Bonds (Primary Dealers) and SMEs markets only, which is where the old value
+// came from. Trading days run Sunday to Thursday.
+const EGX_SESSIONS: &[Window] = &[Window::new(10, 0, 14, 15)];
 // BRVM's published schedule is in UTC, which for Abidjan is also local time
 // (Cote d'Ivoire keeps UTC+0 year-round and observes no DST) — so these read
 // as wall-clock without conversion. 09:00-09:45 is pre-opening and the 09:45
@@ -82,8 +94,18 @@ const EGX_SESSIONS: &[Window] = &[Window::new(10, 0, 14, 30)];
 // pre-closing, a closing fixing, then last-price trading to 15:00. Only the
 // phase BRVM itself calls "cotation continue" is modelled here.
 const BRVM_SESSIONS: &[Window] = &[Window::new(9, 45, 14, 0)];
+// CSE "Les horaires de cotation": Group 01 (continuous-trading shares) runs
+// Pre-Trading 08:10-09:00, Opening Auction Call 09:00-09:30+T0, Regular
+// Trading (continuous) from the end of the opening auction to 15:20, then
+// Closing Auction 15:20-15:30+T1. The registry already had 09:30-15:20, which
+// matches; this value is now verified and carries its source.
 const CSE_SESSIONS: &[Window] = &[Window::new(9, 30, 15, 20)];
-const SEM_SESSIONS: &[Window] = &[Window::new(9, 0, 13, 30)];
+// SEM extended its hours effective Monday 2026-04-20: Pre-opening 09:00-09:30,
+// Continuous 09:30-15:00, Closing 15:00, amendments 15:00-15:45. The old
+// 09:00-13:30 predates the extension and both opened during the pre-open and
+// closed two hours early. Applies to Official Market Equity/DEM boards;
+// auction days end continuous at 14:00 and Venture Market has no pre-open.
+const SEM_SESSIONS: &[Window] = &[Window::new(9, 30, 15, 0)];
 // Botswana runs two regular trading sessions either side of a ten-minute
 // intra-day auction, so this is the first venue here with more than one
 // window. The auction between them is deliberately not covered: nothing trades
@@ -128,20 +150,27 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Johannesburg",
         sessions: JSE_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "JSE Equities Directives, Directive BU table BU1: Continuous Trading 1 \
+             09:00-16:50, Closing Auction Call 16:50-17:00, on a normal business day \
+             (early close days end continuous at 11:50; FCO days 12:15-16:50)",
+        ),
     },
-    // NSX trades on JSE infrastructure and tracks its schedule.
+    // NSX trades on JSE infrastructure but publishes its own 09:00-17:00 window,
+    // so it no longer shares JSE_SESSIONS.
     Venue {
         code: ExchangeCode::Nsx,
         name: "Namibian Stock Exchange",
         countries: &["NA"],
         currency: Currency::new(*b"NAD"),
         timezone: "Africa/Windhoek",
-        sessions: JSE_SESSIONS,
+        sessions: NSX_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "NSX published trading hours: 09:00-17:00 local, Mon-Fri",
+        ),
     },
     Venue {
         code: ExchangeCode::Gse,
@@ -177,8 +206,12 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Cairo",
         sessions: EGX_SESSIONS,
         trading_days: SUN_THU,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "EGX \"Trading Hours\": Main Market Discovery 09:30-10:00, Continuous \
+             Trading 10:00-14:15, Closing Auction 14:15-14:25, Trade-at-Close \
+             14:25-14:30; Sun-Thu trading week",
+        ),
     },
     Venue {
         code: ExchangeCode::Brvm,
@@ -204,8 +237,12 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Casablanca",
         sessions: CSE_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "CSE \"Les horaires de cotation\" (Group 01): Pre-Trading 08:10-09:00, \
+             Opening Auction Call 09:00-09:30+T0, Regular Trading (continuous) to \
+             15:20, Closing Auction 15:20-15:30+T1",
+        ),
     },
     Venue {
         code: ExchangeCode::Sem,
@@ -215,8 +252,12 @@ pub static VENUES: &[Venue] = &[
         timezone: "Indian/Mauritius",
         sessions: SEM_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "SEM trading hours extended effective 2026-04-20: Pre-opening 09:00-09:30, \
+             Continuous 09:30-15:00, Closing 15:00 (Official Market Equity/DEM boards; \
+             auction days end continuous at 14:00)",
+        ),
     },
     Venue {
         code: ExchangeCode::Bse,
