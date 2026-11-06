@@ -425,3 +425,100 @@ fn rse_formal_session_was_already_right() {
         SessionState::Closed
     ); // 12:00
 }
+
+#[test]
+fn jse_continuous_ends_at_the_closing_auction_not_the_published_close() {
+    // JSE factsheet (ZA01/ZA02): Opening Auction Call 08:30-09:00, Continuous
+    // 09:00-16:50, Closing Auction Call 16:50-17:00. SAST is UTC+2 year-round
+    // (no SA DST). The old 17:00 close counted the closing auction as trading.
+    let jse = venue(ExchangeCode::Jse);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 06:45 UTC), jse).unwrap(),
+        SessionState::PreOpen
+    ); // 08:45 — opening auction call, not yet continuous
+    assert_eq!(
+        session_state(datetime!(2026-08-18 07:00 UTC), jse).unwrap(),
+        SessionState::Open
+    ); // 09:00 — continuous begins
+    assert_eq!(
+        session_state(datetime!(2026-08-18 14:49 UTC), jse).unwrap(),
+        SessionState::Open
+    ); // 16:49 — still continuous
+    assert_eq!(
+        session_state(datetime!(2026-08-18 14:50 UTC), jse).unwrap(),
+        SessionState::Closed
+    ); // 16:50 — closing auction call; the old 17:00 close called this Open
+}
+
+#[test]
+fn luse_continuous_starts_after_the_pre_open_hour() {
+    // LuSE Trading Procedures 4.1: Pre-Opening 10:00-11:00, Continuous
+    // 11:00-14:00. Africa/Lusaka (CAT) is UTC+2 year-round. The old 10:00 open
+    // reported the market trading through the whole pre-open hour.
+    let luse = venue(ExchangeCode::Luse);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 08:45 UTC), luse).unwrap(),
+        SessionState::PreOpen
+    ); // 10:45 — pre-opening: orders entered, nothing matches
+    assert_eq!(
+        session_state(datetime!(2026-08-18 09:00 UTC), luse).unwrap(),
+        SessionState::Open
+    ); // 11:00 — continuous begins
+    assert_eq!(
+        session_state(datetime!(2026-08-18 11:59 UTC), luse).unwrap(),
+        SessionState::Open
+    ); // 13:59
+    assert_eq!(
+        session_state(datetime!(2026-08-18 12:00 UTC), luse).unwrap(),
+        SessionState::Closed
+    ); // 14:00 — close
+}
+
+#[test]
+fn bvmt_continuous_ends_before_the_closing_fixing() {
+    // BVMT avis (effective 2019-09-02): pré-ouverture from 08:30, continu
+    // 09:00-14:00, fixing de clôture 14:05, dernier cours 14:05-14:10. Tunisia
+    // keeps UTC+1 year-round. The old 14:10 close ran into the last-price phase.
+    let bvmt = venue(ExchangeCode::Bvmt);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 07:59 UTC), bvmt).unwrap(),
+        SessionState::PreOpen
+    ); // 08:59 — pré-ouverture
+    assert_eq!(
+        session_state(datetime!(2026-08-18 08:00 UTC), bvmt).unwrap(),
+        SessionState::Open
+    ); // 09:00 — continuous begins
+    assert_eq!(
+        session_state(datetime!(2026-08-18 12:59 UTC), bvmt).unwrap(),
+        SessionState::Open
+    ); // 13:59
+    assert_eq!(
+        session_state(datetime!(2026-08-18 13:00 UTC), bvmt).unwrap(),
+        SessionState::Closed
+    ); // 14:00 — continuous ends; the fixing and last-price phases are not it
+}
+
+#[test]
+fn cse_continuous_sits_between_the_two_fixings() {
+    // Bourse de Casablanca: Opening Fixing 09:00-09:30, Continuous 09:30-15:20,
+    // Closing Fixing 15:20-15:30. Casablanca observes DST; 2026-08-18 is outside
+    // Ramadan so Morocco is at UTC+1. This value was already right — the test
+    // pins it against a future edit. Boundary at the fixings, not the day span.
+    let cse = venue(ExchangeCode::Cse);
+    assert_eq!(
+        session_state(datetime!(2026-08-18 08:29 UTC), cse).unwrap(),
+        SessionState::PreOpen
+    ); // 09:29 — opening fixing, not yet continuous
+    assert_eq!(
+        session_state(datetime!(2026-08-18 08:30 UTC), cse).unwrap(),
+        SessionState::Open
+    ); // 09:30 — continuous begins
+    assert_eq!(
+        session_state(datetime!(2026-08-18 14:19 UTC), cse).unwrap(),
+        SessionState::Open
+    ); // 15:19
+    assert_eq!(
+        session_state(datetime!(2026-08-18 14:20 UTC), cse).unwrap(),
+        SessionState::Closed
+    ); // 15:20 — closing fixing begins
+}

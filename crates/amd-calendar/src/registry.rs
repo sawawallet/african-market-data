@@ -65,7 +65,12 @@ pub struct Venue {
 }
 
 const NGX_SESSIONS: &[Window] = &[Window::new(9, 0, 16, 0)];
-const JSE_SESSIONS: &[Window] = &[Window::new(9, 0, 17, 0)];
+// Continuous trading opens at 09:00 after the 08:30-09:00 Opening Auction Call
+// and ends at 16:50. The 16:50-17:00 Closing Auction Call and the 17:00-17:10
+// closing-price publication and cross are not continuous: the "17:00 close"
+// quoted everywhere is the end of the closing auction, not of trading. NSX
+// shares this window.
+const JSE_SESSIONS: &[Window] = &[Window::new(9, 0, 16, 50)];
 // 09:30-10:00 is the Pre-Open Period, not trading: orders are entered but
 // nothing executes until the 10:00 Opening. Modelling it as open reported a
 // market as trading half an hour before it was.
@@ -82,6 +87,11 @@ const EGX_SESSIONS: &[Window] = &[Window::new(10, 0, 14, 30)];
 // pre-closing, a closing fixing, then last-price trading to 15:00. Only the
 // phase BRVM itself calls "cotation continue" is modelled here.
 const BRVM_SESSIONS: &[Window] = &[Window::new(9, 45, 14, 0)];
+// Continuous trading on the liquid "continuous" group runs 09:30-15:20, between
+// the 09:00-09:30 opening fixing and the 15:20-15:30 closing fixing (trading at
+// last price runs 15:30-15:40). The best-effort value already matched the
+// venue's own schedule; verification only adds the citation. Less-liquid groups
+// trade by single or multi-fixing with discrete calls, not continuously.
 const CSE_SESSIONS: &[Window] = &[Window::new(9, 30, 15, 20)];
 const SEM_SESSIONS: &[Window] = &[Window::new(9, 0, 13, 30)];
 // Botswana runs two regular trading sessions either side of a ten-minute
@@ -90,7 +100,11 @@ const SEM_SESSIONS: &[Window] = &[Window::new(9, 0, 13, 30)];
 // continuously at 12:00, and claiming otherwise is the error this field exists
 // to avoid. Auction-call and post-close phases sit outside both windows.
 const BSE_SESSIONS: &[Window] = &[Window::new(10, 25, 11, 55), Window::new(12, 5, 13, 20)];
-const LUSE_SESSIONS: &[Window] = &[Window::new(10, 0, 14, 0)];
+// 10:00-11:00 is Pre-Opening on the ATS: orders are entered, amended and
+// deleted but nothing matches. Continuous trading runs 11:00-14:00, after which
+// a brief closing session strikes the VWAP closing price. The old 10:00 open
+// folded the pre-open into trading, the error this field exists to catch.
+const LUSE_SESSIONS: &[Window] = &[Window::new(11, 0, 14, 0)];
 // Pre-Opening 09:00-09:29 and the 09:30 Opening Auction precede continuous
 // trading, which the DSE's own schedule starts at 09:31 and closes at 16:00.
 const DSE_SESSIONS: &[Window] = &[Window::new(9, 31, 16, 0)];
@@ -104,7 +118,13 @@ const ZSE_SESSIONS: &[Window] = &[Window::new(9, 30, 13, 0)];
 // before the market actually did.
 const MSE_SESSIONS: &[Window] = &[Window::new(9, 30, 14, 30)];
 const RSE_SESSIONS: &[Window] = &[Window::new(9, 0, 12, 0)];
-const BVMT_SESSIONS: &[Window] = &[Window::new(9, 0, 14, 10)];
+// Continuous trading ("séance continue") runs 09:00-14:00, after the 08:30
+// pré-ouverture and the 09:00 opening fixing. The 14:05 fixing de clôture, the
+// 14:05-14:10 négociation au dernier cours and 14:10-14:30 block trades are not
+// continuous — the old 14:10 close ran into the last-price phase. Tunisia keeps
+// UTC+1 year-round. Summer and Ramadan run a shorter 09:00-12:00 day, modelled
+// here as the standard (winter) schedule rather than the seasonal variant.
+const BVMT_SESSIONS: &[Window] = &[Window::new(9, 0, 14, 0)];
 
 pub static VENUES: &[Venue] = &[
     Venue {
@@ -128,10 +148,20 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Johannesburg",
         sessions: JSE_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "JSE Equity Market factsheet, Trading Sessions table (main-board segments \
+             ZA01/ZA02): Opening Auction Call 08:30-09:00, Continuous Trading 09:00-16:50, \
+             Closing Auction Call 16:50-17:00, closing-price publication and cross to 17:10",
+        ),
     },
-    // NSX trades on JSE infrastructure and tracks its schedule.
+    // NSX trades on JSE infrastructure and shares JSE_SESSIONS. It stays
+    // unverified on purpose: NSX's own site publishes only open/close times
+    // (09:00-17:00, where 17:00 is "the end of the administration period", not
+    // the end of trading) with no pre-open/auction phase breakdown. The
+    // continuous end is inherited from the JSE schedule its ZA11/ZA12 segment
+    // codes and matching close times indicate it runs — strong, but not stated
+    // by NSX — so it is best-effort, not checked against NSX's own schedule.
     Venue {
         code: ExchangeCode::Nsx,
         name: "Namibian Stock Exchange",
@@ -204,8 +234,13 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Casablanca",
         sessions: CSE_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "Bourse de Casablanca, Les horaires de cotation (continuous group): \
+             Pre-Trading 08:10-09:00, Opening Fixing 09:00-09:30, Continuous 09:30-15:20, \
+             Closing Fixing 15:20-15:30, trading at last 15:30-15:40. Ramadan shifts \
+             earlier and is not modelled",
+        ),
     },
     Venue {
         code: ExchangeCode::Sem,
@@ -241,8 +276,12 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Lusaka",
         sessions: LUSE_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "LuSE Trading Procedures rulebook, section 4.1 (Equity/Normal Board, \
+             Official Market): Pre-Opening 10:00-11:00, Continuous 11:00-14:00, then a \
+             closing session that strikes the VWAP close. Zambia keeps UTC+2 year-round",
+        ),
     },
     Venue {
         code: ExchangeCode::Dse,
@@ -326,8 +365,14 @@ pub static VENUES: &[Venue] = &[
         timezone: "Africa/Tunis",
         sessions: BVMT_SESSIONS,
         trading_days: MON_FRI,
-        sessions_verified: false,
-        sessions_source: None,
+        sessions_verified: true,
+        sessions_source: Some(
+            "BVMT avis Modification de l'horaire de cotation (Annexe au Manuel de \
+             Negociation), effective 2019-09-02: pre-ouverture from 08:30, fixing \
+             d'ouverture 09:00, cotation en continu 09:00-14:00, fixing de cloture 14:05, \
+             negociation au dernier cours 14:05-14:10, blocs 14:10-14:30. Standard \
+             (winter) schedule; summer and Ramadan run 09:00-12:00",
+        ),
     },
 ];
 
