@@ -100,29 +100,29 @@ Seventeen venues are modelled. `verified` means the session times were checked
 against the exchange's own published schedule — **the rest are best effort**,
 and correcting one is the single most useful contribution this project takes.
 
-Of the nine checked so far, **eight were wrong**. Most began at a pre-open or
-auction phase rather than at trading, and two were also wrong at the close.
-Read an unverified row as unknown, not as probably-right.
+Of the thirteen checked so far, **eleven were wrong**. Most began at a pre-open
+or auction phase rather than at trading, and several were also wrong at the
+close. Read an unverified row as unknown, not as probably-right.
 
 | Code | Exchange | Country | Currency | Session (local) | Verified | Data source |
 |------|----------|---------|----------|-----------------|----------|-------------|
 | NGX  | Nigerian Exchange | NG | NGN | 09:00–16:00 | ✅ | — |
-| JSE  | Johannesburg Stock Exchange | ZA | ZAR | 09:00–17:00 | — | — |
+| JSE  | Johannesburg Stock Exchange | ZA | ZAR | 09:00–16:50 | ✅ | — |
 | NSX  | Namibian Stock Exchange | NA | NAD | 09:00–17:00 | — | — |
 | GSE  | Ghana Stock Exchange | GH | GHS | 10:00–15:00 | ✅ | kwayisi |
 | NSE  | Nairobi Securities Exchange | KE | KES | 09:31–15:00 | ✅ | — |
 | EGX  | Egyptian Exchange | EG | EGP | 10:00–14:30 (Sun–Thu) | — | — |
 | BRVM | Bourse Régionale des Valeurs Mobilières | 8 UEMOA states | XOF | 09:45–14:00 | ✅ | — |
-| CSE  | Casablanca Stock Exchange | MA | MAD | 09:30–15:20 | — | — |
+| CSE  | Casablanca Stock Exchange | MA | MAD | 09:30–15:20 | ✅ | — |
 | SEM  | Stock Exchange of Mauritius | MU | MUR | 09:00–13:30 | — | — |
 | BSE  | Botswana Stock Exchange | BW | BWP | 10:25–11:55, 12:05–13:20 | ✅ | — |
-| LUSE | Lusaka Securities Exchange | ZM | ZMW | 10:00–14:00 | — | — |
+| LUSE | Lusaka Securities Exchange | ZM | ZMW | 11:00–14:00 | ✅ | — |
 | DSE  | Dar es Salaam Stock Exchange | TZ | TZS | 09:31–16:00 | ✅ | — |
 | USE  | Uganda Securities Exchange | UG | UGX | 09:30–12:00 | — | — |
 | ZSE  | Zimbabwe Stock Exchange | ZW | ZWG | 09:30–13:00 | ✅ | — |
 | MSE  | Malawi Stock Exchange | MW | MWK | 09:30–14:30 | ✅ | — |
 | RSE  | Rwanda Stock Exchange | RW | RWF | 09:00–12:00 | ✅ | — |
-| BVMT | Bourse de Tunis | TN | TND | 09:00–14:10 | — | — |
+| BVMT | Bourse de Tunis | TN | TND | 09:00–14:00 | ✅ | — |
 
 A venue with two windows lists both: Botswana trades either side of a
 ten-minute intra-day auction, and `sessions` is an array precisely so that gap
