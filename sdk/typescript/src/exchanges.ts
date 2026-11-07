@@ -51,9 +51,12 @@ export const EXCHANGES: Readonly<Record<ExchangeCode, Exchange>> = Object.freeze
     countries: ["GH"],
     currency: "GHS",
     timezone: "Africa/Accra",
-    sessions: [{ open: "09:30", close: "15:00" }],
+    // 09:30-10:00 is the Pre-Open Period; nothing executes until 10:00.
+    sessions: [{ open: "10:00", close: "15:00" }],
     tradingDays: MON_TO_FRI,
-    sessionsVerified: false,
+    sessionsVerified: true,
+    sessionsSource:
+      "GSE Approved Trading Rules (Equities), Trading Session: Pre-Open 9:30-10:00, Opening 10:00, Continuous Auction 10:00-15:00, Closing 15:00",
   },
   NSE: {
     code: "NSE",
@@ -61,9 +64,12 @@ export const EXCHANGES: Readonly<Record<ExchangeCode, Exchange>> = Object.freeze
     countries: ["KE"],
     currency: "KES",
     timezone: "Africa/Nairobi",
-    sessions: [{ open: "09:00", close: "15:00" }],
+    // 09:00-09:30:59 is the Open Auction Call, not continuous trading.
+    sessions: [{ open: "09:31", close: "15:00" }],
     tradingDays: MON_TO_FRI,
-    sessionsVerified: false,
+    sessionsVerified: true,
+    sessionsSource:
+      "NSE Trading Rules for Equity Securities, rule 6.1.4: Pre-Trading 08:45-08:59:59, Open Auction Call 09:00-09:30:59, Regular Trading 09:31-15:00, Close 15:00",
   },
   EGX: {
     code: "EGX",
@@ -82,9 +88,12 @@ export const EXCHANGES: Readonly<Record<ExchangeCode, Exchange>> = Object.freeze
     countries: ["CI", "SN", "BJ", "BF", "ML", "NE", "TG", "GW"],
     currency: "XOF",
     timezone: "Africa/Abidjan",
-    sessions: [{ open: "09:00", close: "15:00" }],
+    // Only the phase BRVM calls "cotation continue" is modelled.
+    sessions: [{ open: "09:45", close: "14:00" }],
     tradingDays: MON_TO_FRI,
-    sessionsVerified: false,
+    sessionsVerified: true,
+    sessionsSource:
+      "BRVM horaires de cotation (times published in UTC = Abidjan local): pre-ouverture 09:00-09:45, fixing d'ouverture 09:45, cotation continue 09:45-14:00, pre-cloture 14:00-14:30, fixing de cloture 14:30, cotation au dernier cours 14:30-15:00, cloture 15:00",
   },
   CSE: {
     code: "CSE",
@@ -112,9 +121,15 @@ export const EXCHANGES: Readonly<Record<ExchangeCode, Exchange>> = Object.freeze
     countries: ["BW"],
     currency: "BWP",
     timezone: "Africa/Gaborone",
-    sessions: [{ open: "09:00", close: "13:00" }],
+    // Two regular sessions either side of an intra-day auction.
+    sessions: [
+      { open: "10:25", close: "11:55" },
+      { open: "12:05", close: "13:20" },
+    ],
     tradingDays: MON_TO_FRI,
-    sessionsVerified: false,
+    sessionsVerified: true,
+    sessionsSource:
+      "BSE published market hours: Pre-trading 10:00-10:10, Opening Auction Call 10:10-10:25, Regular Trading 1 10:25-11:55, Intra-Day Auction 11:55-12:05, Regular Trading 2 12:05-13:20, Closing Auction Call 13:20-13:30, close 14:00",
   },
   LUSE: {
     code: "LUSE",
@@ -132,9 +147,11 @@ export const EXCHANGES: Readonly<Record<ExchangeCode, Exchange>> = Object.freeze
     countries: ["TZ"],
     currency: "TZS",
     timezone: "Africa/Dar_es_Salaam",
-    sessions: [{ open: "10:00", close: "15:30" }],
+    sessions: [{ open: "09:31", close: "16:00" }],
     tradingDays: MON_TO_FRI,
-    sessionsVerified: false,
+    sessionsVerified: true,
+    sessionsSource:
+      "DSE Circular 75, Tenth Schedule (Rules 173(3), 197(1)), in force 2 June 2025: Pre-Opening 09:00-09:29, Opening Auction 09:30, Continuous 09:31-16:00, Close 16:00",
   },
   USE: {
     code: "USE",
@@ -150,11 +167,13 @@ export const EXCHANGES: Readonly<Record<ExchangeCode, Exchange>> = Object.freeze
     code: "ZSE",
     name: "Zimbabwe Stock Exchange",
     countries: ["ZW"],
-    currency: "USD",
+    currency: "ZWG",
     timezone: "Africa/Harare",
-    sessions: [{ open: "09:00", close: "15:30" }],
+    sessions: [{ open: "09:30", close: "13:00" }],
     tradingDays: MON_TO_FRI,
-    sessionsVerified: false,
+    sessionsVerified: true,
+    sessionsSource:
+      "ZSE published trading hours (Mon-Fri, excluding public holidays): Pre-Open 09:00-09:30, Market Open 09:30-13:00, Post-Close 13:00-14:30",
   },
   MSE: {
     code: "MSE",
@@ -162,9 +181,11 @@ export const EXCHANGES: Readonly<Record<ExchangeCode, Exchange>> = Object.freeze
     countries: ["MW"],
     currency: "MWK",
     timezone: "Africa/Blantyre",
-    sessions: [{ open: "09:00", close: "14:00" }],
+    sessions: [{ open: "09:30", close: "14:30" }],
     tradingDays: MON_TO_FRI,
-    sessionsVerified: false,
+    sessionsVerified: true,
+    sessionsSource:
+      "MSE published market schedule: Pre-Open 09:00-09:30, Open 09:30-14:30, Close 14:30-15:00",
   },
   RSE: {
     code: "RSE",
@@ -174,7 +195,9 @@ export const EXCHANGES: Readonly<Record<ExchangeCode, Exchange>> = Object.freeze
     timezone: "Africa/Kigali",
     sessions: [{ open: "09:00", close: "12:00" }],
     tradingDays: MON_TO_FRI,
-    sessionsVerified: false,
+    sessionsVerified: true,
+    sessionsSource:
+      "RSE trading systems page: open-outcry session on the floor during formal trading hours 09:00-12:00; no auction or pre-open phase is published",
   },
   BVMT: {
     code: "BVMT",
