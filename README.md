@@ -179,7 +179,9 @@ WebSocket only earns its complexity once there is order entry to carry back.
 ### Direct exchange feeds
 
 The architecture anticipates replacing polled sources with direct connectivity.
-Two protocol families cover the major venues:
+[`docs/source-ladder.md`](docs/source-ladder.md) sets out the rungs from a free
+aggregator to a native exchange feed, and tracks the most-direct reachable
+source per venue. Two protocol families cover the major venues:
 
 - **MITCH** (MillenniumIT) — JSE, NSX, NSE Kenya. UDP multicast A/B feeds with
   TCP replay and recovery channels. The LSE publishes the same protocol openly
