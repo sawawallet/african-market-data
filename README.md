@@ -176,6 +176,9 @@ another.
 auto-reconnects, survives corporate proxies, and needs no heartbeat protocol.
 WebSocket only earns its complexity once there is order entry to carry back.
 
+How provenance travels through these stages, and what is not wired yet, is
+in [docs/provenance-path.md](docs/provenance-path.md).
+
 ### Direct exchange feeds
 
 The architecture anticipates replacing polled sources with direct connectivity.
