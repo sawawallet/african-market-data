@@ -131,7 +131,9 @@ is representable rather than flattened into one long window.
 **Public holidays are not modelled.** A wrong holiday calendar is worse than an
 absent one, because it silently reports a closed market as open. `session_state`
 claims only "this is a scheduled trading weekday and the clock is inside a
-window", which is exactly what it can prove.
+window", which is exactly what it can prove. See
+[docs/holiday-awareness.md](docs/holiday-awareness.md) for the reasoning and a
+proposed feed-shaped interface.
 
 ### Sources
 
