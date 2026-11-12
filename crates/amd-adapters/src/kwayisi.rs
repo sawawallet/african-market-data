@@ -162,49 +162,7 @@ impl Adapter for KwayisiAdapter {
     ) -> Result<Vec<Quote>, AdapterError> {
         Self::check(exchange)?;
         let rows: Vec<LiveRow> = self.get("/live").await?;
-        let received_at = OffsetDateTime::now_utc();
-
-        let wanted: Option<Vec<String>> = if symbols.is_empty() {
-            None
-        } else {
-            Some(symbols.iter().map(|s| s.to_ascii_uppercase()).collect())
-        };
-
-        let mut out = Vec::with_capacity(rows.len());
-        for row in rows {
-            let symbol = row.name.to_ascii_uppercase();
-            if let Some(w) = &wanted
-                && !w.contains(&symbol)
-            {
-                continue;
-            }
-
-            let provenance = Provenance::imputed(ID, received_at, DelayClass::Unknown);
-            let mut quote = Quote::new(InstrumentId::new(ExchangeCode::Gse, &symbol), provenance);
-
-            let last = Price::from_f64(row.price, Currency::GHS, DEFAULT_SCALE).map_err(|e| {
-                AdapterError::Malformed {
-                    source_id: ID,
-                    message: format!("{symbol} price: {e}"),
-                }
-            })?;
-            quote.last = Some(last);
-
-            // The feed gives absolute change, so previous close is exact rather
-            // than inferred.
-            let change =
-                Price::from_f64(row.change, Currency::GHS, DEFAULT_SCALE).map_err(|e| {
-                    AdapterError::Malformed {
-                        source_id: ID,
-                        message: format!("{symbol} change: {e}"),
-                    }
-                })?;
-            quote.previous_close = last.sub(change).ok();
-
-            quote.volume = u64::try_from(row.volume.max(0)).ok();
-            out.push(quote);
-        }
-        Ok(out)
+        quotes_from_rows(rows, symbols, OffsetDateTime::now_utc())
     }
 
     async fn history(
@@ -214,4 +172,65 @@ impl Adapter for KwayisiAdapter {
     ) -> Result<Vec<Bar>, AdapterError> {
         Err(AdapterError::NoHistory { source_id: ID })
     }
+}
+
+/// Parse a raw `/live` JSON body into quotes. Pure (no I/O), so the offline
+/// fixture tests exercise the exact code path the live adapter uses.
+pub fn parse_live(
+    body: &str,
+    symbols: &[String],
+    received_at: OffsetDateTime,
+) -> Result<Vec<Quote>, AdapterError> {
+    let rows: Vec<LiveRow> = serde_json::from_str(body).map_err(|e| AdapterError::Malformed {
+        source_id: ID,
+        message: e.to_string(),
+    })?;
+    quotes_from_rows(rows, symbols, received_at)
+}
+
+fn quotes_from_rows(
+    rows: Vec<LiveRow>,
+    symbols: &[String],
+    received_at: OffsetDateTime,
+) -> Result<Vec<Quote>, AdapterError> {
+    let wanted: Option<Vec<String>> = if symbols.is_empty() {
+        None
+    } else {
+        Some(symbols.iter().map(|s| s.to_ascii_uppercase()).collect())
+    };
+
+    let mut out = Vec::with_capacity(rows.len());
+    for row in rows {
+        let symbol = row.name.to_ascii_uppercase();
+        if let Some(w) = &wanted
+            && !w.contains(&symbol)
+        {
+            continue;
+        }
+
+        let provenance = Provenance::imputed(ID, received_at, DelayClass::Unknown);
+        let mut quote = Quote::new(InstrumentId::new(ExchangeCode::Gse, &symbol), provenance);
+
+        let last = Price::from_f64(row.price, Currency::GHS, DEFAULT_SCALE).map_err(|e| {
+            AdapterError::Malformed {
+                source_id: ID,
+                message: format!("{symbol} price: {e}"),
+            }
+        })?;
+        quote.last = Some(last);
+
+        // The feed gives absolute change, so previous close is exact rather
+        // than inferred.
+        let change = Price::from_f64(row.change, Currency::GHS, DEFAULT_SCALE).map_err(|e| {
+            AdapterError::Malformed {
+                source_id: ID,
+                message: format!("{symbol} change: {e}"),
+            }
+        })?;
+        quote.previous_close = last.sub(change).ok();
+
+        quote.volume = u64::try_from(row.volume.max(0)).ok();
+        out.push(quote);
+    }
+    Ok(out)
 }
