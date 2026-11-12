@@ -10,7 +10,7 @@
 //! ```
 
 use amd_adapters::http::HttpClient;
-use amd_adapters::kwayisi::KwayisiAdapter;
+use amd_adapters::kwayisi::{KwayisiAdapter, parse_live};
 use amd_adapters::{Adapter, AdapterError};
 use amd_core::{Currency, DEFAULT_SCALE, DelayClass, ExchangeCode, Price};
 use serde_json::Value;
@@ -150,4 +150,35 @@ async fn live_instrument_detail_resolves_company_name() {
     assert_eq!(inst.symbol(), "MTNGH");
     assert!(inst.name.is_some());
     assert!(inst.shares_outstanding.unwrap_or(0) > 0);
+}
+
+#[test]
+fn live_fixture_parses_through_the_adapters_own_code() {
+    // Drift guard: the fixture goes through the same parser the live adapter
+    // uses, so a change to the adapter's expected shape (or a refreshed
+    // fixture that no longer fits it) fails here, offline.
+    let now = time::OffsetDateTime::now_utc();
+    let quotes = parse_live(LIVE_FIXTURE, &[], now).expect("fixture parses");
+    let rows: Vec<Value> = serde_json::from_str(LIVE_FIXTURE).unwrap();
+    assert_eq!(quotes.len(), rows.len(), "no row may be silently dropped");
+    for q in &quotes {
+        assert_eq!(q.instrument.exchange, ExchangeCode::Gse);
+        assert!(q.last.is_some());
+        assert!(q.provenance.as_of_imputed);
+        assert_eq!(q.provenance.delay, DelayClass::Unknown);
+        assert_eq!(q.provenance.source, "kwayisi");
+        assert!(q.provenance.sequence.is_none());
+    }
+}
+
+#[test]
+fn parse_live_filters_symbols_and_rejects_bad_bodies() {
+    let now = time::OffsetDateTime::now_utc();
+    let one = parse_live(LIVE_FIXTURE, &["mtngh".to_string()], now).unwrap();
+    assert_eq!(one.len(), 1);
+    assert_eq!(one[0].instrument.symbol, "MTNGH");
+
+    let err = parse_live(r#"[{"name":"X"}]"#, &[], now).unwrap_err();
+    assert!(matches!(err, AdapterError::Malformed { .. }));
+    assert!(parse_live("not json", &[], now).is_err());
 }
